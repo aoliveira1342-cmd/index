@@ -700,10 +700,11 @@ async function handleSave(){
   const patch = {title, date, time, desc, cat, done};
 
   if(editingId){
-    const t = tasks.find(x=>x.id===editingId);
+    const id = editingId;
+    const t = tasks.find(x=>x.id===id);
     Object.assign(t, patch);
     closeModal(); renderAll();
-    const { error } = await supabase.from('tasks').update(toDbTask(patch)).eq('id', editingId);
+    const { error } = await supabase.from('tasks').update(toDbTask(patch)).eq('id', id);
     if(error) alert('Erro ao salvar: '+error.message);
   } else {
     const { data, error } = await supabase.from('tasks').insert(toDbTask(patch)).select().single();

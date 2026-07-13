@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semana de Treino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151B; --surface:#1B2028; --surface2:#20262F; --lane:#2A303B;
+    --text:#F2F0EA; --muted:#8A93A3; --accent:#FF4B3E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .app{max-width:1200px;margin:0 auto;padding:20px 16px 60px;}
+  input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
+
+  /* ---- AUTH SCREEN ---- */
+  #authScreen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);padding:20px;
+  }
+  .auth-card{
+    width:100%;max-width:380px;background:var(--surface);border:1px solid var(--lane);
+    border-radius:12px;padding:30px 26px;
+  }
+  .auth-title{font-family:'Bebas Neue';font-size:36px;letter-spacing:1px;margin:0 0 4px;text-align:center;}
+  .auth-title span{color:var(--accent);}
+  .auth-sub{text-align:center;color:var(--muted);font-size:12.5px;margin-bottom:22px;}
+  .auth-tabs{display:flex;border:1px solid var(--lane);border-radius:6px;overflow:hidden;margin-bottom:20px;}
+  .auth-tab{flex:1;background:var(--surface2);color:var(--muted);border:none;padding:10px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;cursor:pointer;}
+  .auth-tab.active{background:var(--accent);color:#12151B;}
+  .auth-field{margin-bottom:14px;}
+  .auth-field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;}
+  .auth-field input{width:100%;background:var(--bg);border:1px solid var(--lane);color:var(--text);padding:11px 12px;border-radius:6px;font-size:14px;}
+  .auth-submit{width:100%;background:var(--accent);color:#12151B;border:none;border-radius:6px;padding:12px;font-size:13.5px;font-weight:700;cursor:pointer;margin-top:6px;text-transform:uppercase;letter-spacing:.03em;}
+  .auth-submit:disabled{opacity:.6;cursor:default;}
+  .auth-msg{font-size:12.5px;margin-top:14px;text-align:center;line-height:1.4;}
+  .auth-msg.error{color:#E85D5D;}
+  .auth-msg.success{color:#2DD4BF;}
+
+  /* ---- APP SCREEN ---- */
+  #appScreen{display:none;}
+  .app-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px;}
+  .app-title{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:1px;margin:0;line-height:1;}
+  .app-title span{color:var(--accent);}
+  .header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .user-badge{font-size:12px;color:var(--muted);}
+  .logout-btn{background:transparent;border:1px solid var(--lane);color:var(--muted);font-size:12px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;}
+  .logout-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .view-toggle{display:flex;gap:0;border:1px solid var(--lane);border-radius:6px;overflow:hidden;}
+  .view-toggle button{background:var(--surface);color:var(--muted);border:none;font-family:'Inter';font-weight:600;font-size:13px;letter-spacing:.04em;padding:9px 16px;cursor:pointer;text-transform:uppercase;}
+  .view-toggle button.active{background:var(--accent);color:#12151B;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px;align-items:center;}
+  .legend-pill{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--lane);padding:5px 10px 5px 8px;border-radius:20px;font-size:12px;color:var(--muted);}
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .manage-cats-btn{background:transparent;border:1px dashed var(--lane);color:var(--muted);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;}
+  .manage-cats-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .view-nav{display:flex;justify-content:space-between;align-items:center;margin:16px 0 14px;flex-wrap:wrap;gap:10px;}
+  .nav-left{display:flex;align-items:center;gap:8px;}
+  .nav-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:14px;}
+  .nav-btn:hover{border-color:var(--accent);}
+  .nav-today-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);font-size:12px;font-weight:700;padding:0 14px;height:32px;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:.03em;}
+  .nav-today-btn:hover{border-color:var(--accent);}
+  .range-label{font-family:'Bebas Neue';font-size:22px;letter-spacing:1px;}
+
+  .week-track{position:relative;}
+  .week-grid{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:0;border-top:2px dashed var(--lane);}
+  .day-col{border-right:1px dashed var(--lane);padding:14px 10px 16px;min-height:220px;background:linear-gradient(180deg,rgba(255,255,255,0.015),transparent 40px);transition:background .15s;}
+  .day-col:last-child{border-right:none;}
+  .day-col.today{background:rgba(255,75,62,0.05);}
+  .day-col.drag-over{background:rgba(255,75,62,0.1);}
+  .day-col-head{font-family:'Bebas Neue';font-size:20px;letter-spacing:1.5px;margin-bottom:0;}
+  .day-col-date{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);margin-bottom:10px;}
+  .day-col.today .day-col-head{color:var(--accent);}
+
+  .task-chip{background:var(--surface2);border-radius:4px;padding:9px 10px 9px 12px;margin-bottom:8px;cursor:grab;border-left:3px solid #A78BFA;transition:transform .1s;}
+  .task-chip:active{cursor:grabbing;}
+  .task-chip.drag-ghost{opacity:.4;}
+  .task-chip:hover{transform:translateX(2px);}
+  .task-chip.done{opacity:.55;}
+  .task-chip.done .task-title{text-decoration:line-through;}
+  .task-chip-top{display:flex;align-items:center;gap:7px;}
+  .task-emoji{font-size:13px;}
+  .task-title{font-size:13.5px;font-weight:600;line-height:1.25;}
+  .task-time{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);margin-top:4px;margin-left:22px;}
+
+  .add-task-btn{width:100%;background:transparent;border:1px dashed var(--lane);color:var(--muted);font-size:12px;font-weight:600;border-radius:4px;padding:8px;cursor:pointer;letter-spacing:.03em;}
+  .add-task-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  #dayView{display:none;}
+  #monthView{display:none;}
+
+  .day-schedule{border-top:1px dashed var(--lane);}
+  .schedule-row{display:flex;gap:14px;padding:12px 4px;border-bottom:1px dashed var(--lane);cursor:pointer;align-items:flex-start;}
+  .schedule-row:hover{background:rgba(255,255,255,0.02);}
+  .schedule-check{margin-top:3px;}
+  .schedule-time{font-family:'IBM Plex Mono';font-size:12px;color:var(--muted);width:52px;flex-shrink:0;padding-top:2px;}
+  .schedule-body{flex:1;border-left:3px solid #A78BFA;padding-left:10px;}
+  .schedule-title{font-size:14.5px;font-weight:700;}
+  .schedule-row.done .schedule-title{text-decoration:line-through;color:var(--muted);}
+  .schedule-cat{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+  .schedule-desc{font-size:12.5px;color:var(--muted);margin-top:4px;white-space:pre-wrap;line-height:1.4;}
+  .empty-day{color:var(--muted);font-size:13px;padding:30px 4px;text-align:center;}
+
+  .month-weekday-heads{display:grid;grid-template-columns:repeat(7,1fr);}
+  .month-weekday-head{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:center;padding:6px 0;}
+  .month-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px dashed var(--lane);border-left:1px dashed var(--lane);}
+  .month-cell{border-right:1px dashed var(--lane);border-bottom:1px dashed var(--lane);min-height:96px;padding:6px;transition:background .15s;cursor:pointer;}
+  .month-cell.other-month{opacity:.3;}
+  .month-cell.today{background:rgba(255,75,62,0.08);}
+  .month-cell.drag-over{background:rgba(255,75,62,0.14);}
+  .month-cell-num{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .month-cell.today .month-cell-num{color:var(--accent);font-weight:700;}
+  .month-chip{font-size:10.5px;padding:3px 5px;border-radius:3px;background:var(--surface2);border-left:2px solid #A78BFA;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
+  .month-chip.done{opacity:.5;text-decoration:line-through;}
+  .month-chip input[type=checkbox]{width:11px;height:11px;}
+  .month-more{font-size:10px;color:var(--muted);padding:2px 5px;}
+
+  .backlog{margin-top:36px;border-top:2px dashed var(--lane);padding-top:20px;}
+  .backlog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .backlog-title{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;}
+  .backlog-actions{display:flex;gap:8px;}
+  .backlog-add{background:var(--surface);border:1px solid var(--lane);color:var(--text);font-size:12px;font-weight:600;padding:8px 14px;border-radius:6px;cursor:pointer;}
+  .backlog-add:hover{border-color:var(--accent);}
+  .backlog-columns{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;min-height:80px;}
+  .backlog-empty-wrap{flex:1;border:1px dashed var(--lane);border-radius:8px;padding:20px;color:var(--muted);font-size:12px;text-align:center;}
+  .backlog-empty-wrap.drag-over{background:rgba(255,75,62,0.06);}
+  .backlog-col{min-width:200px;max-width:220px;flex-shrink:0;border:1px solid var(--lane);border-radius:8px;padding:10px;background:rgba(255,255,255,0.012);}
+  .backlog-col.drag-over{background:rgba(255,75,62,0.08);}
+  .backlog-col-head{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;letter-spacing:.02em;}
+  .backlog-col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--lane);border-radius:10px;width:100%;max-width:420px;padding:22px;max-height:90vh;overflow-y:auto;}
+  .modal h3{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;margin:0 0 16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;}
+  .field input[type=text], .field input[type=time], .field input[type=date], .field select, .field textarea{width:100%;background:var(--bg);border:1px solid var(--lane);color:var(--text);padding:9px 10px;border-radius:6px;font-family:'Inter';font-size:13.5px;}
+  .field textarea{min-height:90px;resize:vertical;font-family:'Inter';line-height:1.4;}
+  .date-row{display:flex;gap:10px;align-items:center;}
+  .date-row input[type=date]{flex:1;}
+  .checkbox-line{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);white-space:nowrap;}
+  .cat-select{display:flex;flex-wrap:wrap;gap:6px;}
+  .cat-btn{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--lane);color:var(--muted);padding:6px 10px;border-radius:20px;font-size:12px;cursor:pointer;}
+  .cat-btn.selected{border-color:currentColor;color:var(--text);}
+  .cat-dot{width:8px;height:8px;border-radius:50%;}
+  .modal-actions{display:flex;justify-content:space-between;gap:10px;margin-top:18px;}
+  .btn{border:none;border-radius:6px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn-save{background:var(--accent);color:#12151B;flex:1;}
+  .btn-cancel{background:transparent;color:var(--muted);border:1px solid var(--lane);}
+  .btn-delete{background:transparent;color:#E85D5D;border:1px solid #E85D5D33;}
+
+  .cat-manage-row{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--lane);}
+  .cat-manage-row .cat-dot{width:12px;height:12px;}
+  .cat-manage-label{flex:1;font-size:13.5px;font-weight:600;}
+  .icon-btn{background:transparent;border:1px solid var(--lane);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .cat-form{display:flex;gap:8px;align-items:flex-end;margin-top:14px;flex-wrap:wrap;}
+  .cat-form .field{margin-bottom:0;flex:1;min-width:80px;}
+  .cat-form input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--lane);border-radius:6px;background:var(--bg);cursor:pointer;}
+  .cat-form input[type=text].emoji-input{width:52px;text-align:center;font-size:16px;padding:8px 4px;}
+
+  @media (max-width:880px){
+    .week-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;}
+    .day-col{min-width:78vw;scroll-snap-align:start;border-right:1px dashed var(--lane);}
+    .month-cell{min-height:70px;}
+  }
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-card">
+    <h1 class="auth-title">Semana de <span>Treino</span></h1>
+    <div class="auth-sub">Entre ou crie sua conta para acessar seus treinos</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin">Entrar</button>
+      <button class="auth-tab" id="tabSignup">Criar conta</button>
+    </div>
+    <div class="auth-field">
+      <label>E-mail</label>
+      <input type="email" id="authEmail" placeholder="voce@email.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label>Senha</label>
+      <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="auth-submit" id="authSubmitBtn">Entrar</button>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
+
+<div id="appScreen">
+<div class="app">
+  <div class="app-header">
+    <h1 class="app-title">Semana de <span>Treino</span></h1>
+    <div class="header-right">
+      <span class="user-badge" id="userEmailLabel"></span>
+      <button class="logout-btn" id="btnLogout">Sair</button>
+      <div class="view-toggle">
+        <button id="btnWeek" class="active">Semana</button>
+        <button id="btnDay">Dia</button>
+        <button id="btnMonth">Mês</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+
+  <div id="weekView">
+    <div class="view-nav">
+      <div class="nav-left">
+        <button class="nav-btn" id="weekPrev">‹</button>
+        <button class="nav-today-btn" id="weekToday">Hoje</button>
+        <button class="nav-btn" id="weekNext">›</button>
+      </div>
+      <div class="range-label" id="weekRangeLabel"></div>
+    </div>
+    <div class="week-track"><div class="week-grid" id="weekGrid"></div></div>
+  </div>
+
+  <div id="dayView">
+    <div class="view-nav">
+      <div class="nav-left">
+        <button class="nav-btn" id="dayPrev">‹</button>
+        <button class="nav-today-btn" id="dayToday">Hoje</button>
+        <button class="nav-btn" id="dayNext">›</button>
+      </div>
+      <div class="range-label" id="dayRangeLabel"></div>
+    </div>
+    <div class="day-schedule" id="daySchedule"></div>
+  </div>
+
+  <div id="monthView">
+    <div class="view-nav">
+      <div class="nav-left">
+        <button class="nav-btn" id="monthPrev">‹</button>
+        <button class="nav-today-btn" id="monthToday">Hoje</button>
+        <button class="nav-btn" id="monthNext">›</button>
+      </div>
+      <div class="range-label" id="monthRangeLabel"></div>
+    </div>
+    <div class="month-weekday-heads" id="monthWeekdayHeads"></div>
+    <div class="month-grid" id="monthGrid"></div>
+  </div>
+
+  <div class="backlog">
+    <div class="backlog-head">
+      <div class="backlog-title">Backlog</div>
+      <div class="backlog-actions">
+        <button class="backlog-add" id="btnManageCats">Categorias</button>
+        <button class="backlog-add" id="btnAddBacklog">+ Nova tarefa</button>
+      </div>
+    </div>
+    <div class="backlog-columns" id="backlogColumns"></div>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Nova tarefa</h3>
+    <div class="field"><label>Título</label><input type="text" id="fTitle" placeholder="Ex: Rodagem leve"></div>
+    <div class="field"><label>Categoria</label><div class="cat-select" id="fCatSelect"></div></div>
+    <div class="field">
+      <label>Data</label>
+      <div class="date-row">
+        <input type="date" id="fDate">
+        <label class="checkbox-line"><input type="checkbox" id="fNoDate"> Backlog (sem data)</label>
+      </div>
+    </div>
+    <div class="field"><label>Horário (opcional)</label><input type="time" id="fTime"></div>
+    <div class="field"><label>Descrição</label><textarea id="fDesc" placeholder="Detalhes: aquecimento, pace, complementos, observações..."></textarea></div>
+    <div class="field"><label class="checkbox-line" style="font-size:13px;"><input type="checkbox" id="fDone"> Concluído</label></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" id="btnCancel">Cancelar</button>
+      <button class="btn btn-delete" id="btnDelete" style="display:none;">Excluir</button>
+      <button class="btn btn-save" id="btnSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="catModalOverlay">
+  <div class="modal">
+    <h3>Categorias</h3>
+    <div id="catList"></div>
+    <div class="cat-form">
+      <input type="text" id="catEmoji" class="emoji-input" placeholder="🏷️" maxlength="4">
+      <div class="field"><label>Nome</label><input type="text" id="catLabel" placeholder="Nova categoria"></div>
+      <input type="color" id="catColor" value="#A78BFA">
+      <button class="btn btn-save" id="btnCatSave" style="flex:0;padding:9px 14px;">Adicionar</button>
+    </div>
+    <div class="modal-actions"><button class="btn btn-cancel" id="btnCatClose">Fechar</button></div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// ============================================================
+// SUBSTITUA pelos dados do SEU projeto Supabase
+// (Settings > API no painel do Supabase)
+// ============================================================
+const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+const SUPABASE_ANON_KEY = 'SUA_CHAVE_ANON_PUBLICA';
+// ============================================================
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const DEFAULT_CATS = [
+  { key:'corrida',      label:'Treino de corrida',   emoji:'🏃',  color:'#FF4B3E' },
+  { key:'complementos', label:'Complementos',        emoji:'🧩',  color:'#2DD4BF' },
+  { key:'musculacao',   label:'Musculação',          emoji:'🏋️', color:'#F5B942' },
+  { key:'trabalho',     label:'Tarefa de trabalho',  emoji:'💼',  color:'#6C7BC4' },
+  { key:'geral',        label:'Tarefa geral',        emoji:'📌',  color:'#A78BFA' }
+];
+
+const WEEKDAY_SHORT = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+const WEEKDAY_FULL = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+let tasks = [];
+let categories = [];
+let currentWeekStart = getMonday(new Date());
+let currentDate = todayISO();
+let currentMonthCursor = new Date();
+let editingId = null;
+let catEditingKey = null;
+let lastKnownToday = todayISO();
+let currentUser = null;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function fromISO(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+function getMonday(d){ const date = new Date(d); const day = date.getDay(); const diff = (day===0?-6:1-day); date.setDate(date.getDate()+diff); date.setHours(0,0,0,0); return date; }
+function todayISO(){ return toISO(new Date()); }
+function fmtShort(d){ return pad(d.getDate())+'/'+pad(d.getMonth()+1); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function slugify(label){
+  let base = label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  if(!base) base = 'cat';
+  let key = base, i = 1;
+  while(categories.some(c=>c.key===key)){ key = base + '_' + (i++); }
+  return key;
+}
+function catByKey(key){ return categories.find(c=>c.key===key) || categories[0]; }
+
+// ---- DB <-> local mapping ----
+function fromDbTask(row){
+  return { id:row.id, title:row.title, cat:row.cat, date:row.date, time:row.time||'', desc:row.description||'', done:!!row.done };
+}
+function toDbTask(patch){
+  const m = {};
+  if('title' in patch) m.title = patch.title;
+  if('cat' in patch) m.cat = patch.cat;
+  if('date' in patch) m.date = patch.date;
+  if('time' in patch) m.time = patch.time || null;
+  if('desc' in patch) m.description = patch.desc || null;
+  if('done' in patch) m.done = patch.done;
+  return m;
+}
+
+function defaultTaskSeed(){
+  const mk = (title,cat,date,time,desc) => ({title,cat,date,time:time||null,description:desc,done:false});
+  return [
+    mk('Rodagem leve','corrida','2026-07-13','07:00','4-6km em ritmo de conversa (~6:30-7:00/km). Recuperação ativa, sem prender em pace fixo.'),
+    mk('Mobilidade + fortalecimento leve','complementos','2026-07-13','','Foco em quadril e coxa. Nada de carga pesada ainda.'),
+    mk('Sprint técnica submáxima','corrida','2026-07-14','07:00','Aquecimento 8-10min + mobilidade 5-7min + educativos + 4-6 progressivos de 40-60m (70%→85%). Caminhar entre os tiros, nunca esforço máximo.'),
+    mk('Rodagem leve','corrida','2026-07-15','07:00','4-6km em ritmo de conversa. Perna solta, sem pace fixo.'),
+    mk('Mobilidade + fortalecimento leve','complementos','2026-07-15','','Foco em quadril e coxa.'),
+    mk('Ritmo intervalado 12min','corrida','2026-07-16','07:00','6x400m no pace ~4:48/km, 90s trote leve entre. Aquecer bem antes.'),
+    mk('Rodagem leve','corrida','2026-07-17','07:00','4-6km em ritmo de conversa.'),
+    mk('Mobilidade + fortalecimento leve','complementos','2026-07-17','','Foco em quadril e coxa.'),
+    mk('Sprint técnica submáxima','corrida','2026-07-18','07:00','Aquecimento + mobilidade + educativos + 4-6 progressivos (70%→85%). Caminhar entre os tiros.'),
+    mk('Descanso','corrida','2026-07-19','','Sem corrida. Gelo se necessário, caminhada leve opcional.'),
+    mk('Mobilidade leve','complementos','2026-07-19','','Alongamento leve, sem carga.')
+  ];
+}
+
+// ---- load / seed user content ----
+async function initUserContent(){
+  let { data: catRows, error: catErr } = await supabase.from('categories').select('*').order('created_at');
+  if(catErr) console.error(catErr);
+  if(!catRows || catRows.length===0){
+    const seed = DEFAULT_CATS.map(c=>({key:c.key,label:c.label,emoji:c.emoji,color:c.color}));
+    const { data: inserted, error: insErr } = await supabase.from('categories').insert(seed).select();
+    catRows = insErr ? [] : inserted;
+    if(insErr) console.error(insErr);
+  }
+  categories = (catRows||[]).map(r=>({id:r.id,key:r.key,label:r.label,emoji:r.emoji,color:r.color}));
+
+  let { data: taskRows, error: taskErr } = await supabase.from('tasks').select('*').order('created_at');
+  if(taskErr) console.error(taskErr);
+  if(!taskRows || taskRows.length===0){
+    const seed = defaultTaskSeed();
+    const { data: inserted, error: insErr } = await supabase.from('tasks').insert(seed).select();
+    taskRows = insErr ? [] : inserted;
+    if(insErr) console.error(insErr);
+  }
+  tasks = (taskRows||[]).map(fromDbTask);
+}
+
+// ============================================================
+// RENDERING (mesma lógica de antes, agora lendo do cache local
+// que é sincronizado com o Supabase a cada ação)
+// ============================================================
+
+function renderLegend(){
+  const el = document.getElementById('legend');
+  el.innerHTML = categories.map(c=>
+    `<div class="legend-pill"><span class="legend-dot" style="background:${c.color}"></span>${c.emoji} ${c.label}</div>`
+  ).join('') + `<button class="manage-cats-btn" id="legendManageBtn">+ gerenciar categorias</button>`;
+  document.getElementById('legendManageBtn').onclick = openCatModal;
+}
+
+function chipHTML(t, compact){
+  const c = catByKey(t.cat);
+  if(compact){
+    return `<div class="month-chip ${t.done?'done':''}" draggable="true" data-id="${t.id}" style="border-left-color:${c.color}">
+      <input type="checkbox" class="chip-check" data-id="${t.id}" draggable="false" ${t.done?'checked':''}>
+      <span>${c.emoji} ${escapeHtml(t.title)}</span>
+    </div>`;
+  }
+  return `<div class="task-chip ${t.done?'done':''}" draggable="true" data-id="${t.id}" style="border-left-color:${c.color}">
+    <div class="task-chip-top">
+      <input type="checkbox" class="chip-check" data-id="${t.id}" draggable="false" ${t.done?'checked':''}>
+      <span class="task-emoji">${c.emoji}</span><span class="task-title">${escapeHtml(t.title)}</span>
+    </div>
+    ${t.time ? `<div class="task-time">${t.time}</div>` : ''}
+  </div>`;
+}
+
+function renderWeek(){
+  const dates = [];
+  for(let i=0;i<7;i++) dates.push(addDays(currentWeekStart, i));
+  document.getElementById('weekRangeLabel').textContent = fmtShort(dates[0]) + ' – ' + fmtShort(dates[6]) + ' de ' + MONTH_NAMES[dates[6].getMonth()];
+
+  const today = todayISO();
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = dates.map((d,i) => {
+    const iso = toISO(d);
+    const dayTasks = tasks.filter(t=>t.date===iso);
+    const isToday = iso===today;
+    return `<div class="day-col ${isToday?'today':''}" data-date="${iso}">
+      <div class="day-col-head">${WEEKDAY_SHORT[i]}</div>
+      <div class="day-col-date">${fmtShort(d)}</div>
+      <div class="day-col-tasks">${dayTasks.map(t=>chipHTML(t,false)).join('')}</div>
+      <button class="add-task-btn" data-date="${iso}">+ adicionar</button>
+    </div>`;
+  }).join('');
+
+  document.querySelectorAll('#weekGrid .day-col').forEach(col=>{
+    attachChipEvents(col);
+    attachDropZone(col, col.dataset.date, null);
+  });
+  document.querySelectorAll('#weekGrid .add-task-btn').forEach(btn=>{
+    btn.onclick = ()=> openModal(null, btn.dataset.date);
+  });
+}
+
+function renderDay(){
+  const d = fromISO(currentDate);
+  const wd = (d.getDay()===0?6:d.getDay()-1);
+  document.getElementById('dayRangeLabel').textContent = WEEKDAY_FULL[wd] + ', ' + fmtShort(d) + ' de ' + MONTH_NAMES[d.getMonth()];
+
+  const el = document.getElementById('daySchedule');
+  let dayTasks = tasks.filter(t=>t.date===currentDate);
+  dayTasks = dayTasks.slice().sort((a,b)=>{
+    if(a.time && b.time) return a.time.localeCompare(b.time);
+    if(a.time && !b.time) return -1;
+    if(!a.time && b.time) return 1;
+    return 0;
+  });
+  if(dayTasks.length===0){
+    el.innerHTML = `<div class="empty-day" id="dayEmptyDrop">Nada por aqui ainda. Arraste do backlog ou adicione uma tarefa.</div>`;
+    attachDropZone(document.getElementById('dayEmptyDrop'), currentDate, null);
+    return;
+  }
+  el.innerHTML = dayTasks.map(t=>{
+    const c = catByKey(t.cat);
+    return `<div class="schedule-row ${t.done?'done':''}" data-id="${t.id}">
+      <input type="checkbox" class="schedule-check chip-check" data-id="${t.id}" ${t.done?'checked':''}>
+      <div class="schedule-time">${t.time || '--:--'}</div>
+      <div class="schedule-body" style="border-left-color:${c.color}">
+        <div class="schedule-title">${c.emoji} ${escapeHtml(t.title)}</div>
+        <div class="schedule-cat">${c.label}</div>
+        ${t.desc ? `<div class="schedule-desc">${escapeHtml(t.desc)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.schedule-row').forEach(row=>{
+    row.addEventListener('click', e=>{
+      if(e.target.classList.contains('chip-check')) return;
+      openModal(row.dataset.id);
+    });
+  });
+  attachCheckboxEvents(el);
+  attachDropZone(el, currentDate, null);
+}
+
+function renderMonth(){
+  const year = currentMonthCursor.getFullYear();
+  const month = currentMonthCursor.getMonth();
+  document.getElementById('monthRangeLabel').textContent = MONTH_NAMES[month] + ' ' + year;
+
+  const headsEl = document.getElementById('monthWeekdayHeads');
+  headsEl.innerHTML = WEEKDAY_SHORT.map(w=>`<div class="month-weekday-head">${w}</div>`).join('');
+
+  const first = new Date(year, month, 1);
+  const startOffset = (first.getDay()===0?6:first.getDay()-1);
+  const gridStart = addDays(first, -startOffset);
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const totalCells = startOffset + daysInMonth;
+  const rows = Math.ceil(totalCells/7);
+  const cellCount = rows*7;
+
+  const today = todayISO();
+  const grid = document.getElementById('monthGrid');
+  let html = '';
+  for(let i=0;i<cellCount;i++){
+    const d = addDays(gridStart, i);
+    const iso = toISO(d);
+    const otherMonth = d.getMonth() !== month;
+    const isToday = iso===today;
+    const dayTasks = tasks.filter(t=>t.date===iso);
+    const shown = dayTasks.slice(0,3);
+    const extra = dayTasks.length - shown.length;
+    html += `<div class="month-cell ${otherMonth?'other-month':''} ${isToday?'today':''}" data-date="${iso}">
+      <div class="month-cell-num">${d.getDate()}</div>
+      <div class="month-cell-tasks">${shown.map(t=>chipHTML(t,true)).join('')}${extra>0?`<div class="month-more">+${extra} mais</div>`:''}</div>
+    </div>`;
+  }
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.month-cell').forEach(cell=>{
+    attachChipEvents(cell);
+    attachDropZone(cell, cell.dataset.date, null);
+    cell.addEventListener('click', e=>{
+      if(e.target.closest('.month-chip')) return;
+      openModal(null, cell.dataset.date);
+    });
+  });
+}
+
+function renderBacklog(){
+  const el = document.getElementById('backlogColumns');
+  const backlogTasks = tasks.filter(t=>!t.date);
+
+  if(backlogTasks.length===0){
+    el.innerHTML = `<div class="backlog-empty-wrap" id="backlogEmptyDrop">Sem tarefas no backlog. Adicione com o botão acima ou arraste um treino aqui.</div>`;
+    attachDropZone(document.getElementById('backlogEmptyDrop'), null, null);
+    return;
+  }
+  const presentCats = categories.filter(c => backlogTasks.some(t=>t.cat===c.key));
+  el.innerHTML = presentCats.map(c=>{
+    const catTasks = backlogTasks.filter(t=>t.cat===c.key);
+    return `<div class="backlog-col" data-cat="${c.key}">
+      <div class="backlog-col-head"><span class="backlog-col-dot" style="background:${c.color}"></span>${c.emoji} ${escapeHtml(c.label)} (${catTasks.length})</div>
+      <div class="backlog-col-tasks">${catTasks.map(t=>chipHTML(t,false)).join('')}</div>
+    </div>`;
+  }).join('');
+  presentCats.forEach(c=>{
+    const colEl = el.querySelector('.backlog-col[data-cat="'+c.key+'"]');
+    attachChipEvents(colEl);
+    attachDropZone(colEl, null, c.key);
+  });
+}
+
+function attachCheckboxEvents(container){
+  container.querySelectorAll('.chip-check').forEach(cb=>{
+    cb.addEventListener('click', e=> e.stopPropagation());
+    cb.addEventListener('change', async e=>{
+      const id = e.target.dataset.id;
+      const t = tasks.find(x=>x.id===id);
+      t.done = e.target.checked;
+      renderAll();
+      const { error } = await supabase.from('tasks').update({done:t.done}).eq('id', id);
+      if(error) alert('Erro ao atualizar: '+error.message);
+    });
+  });
+}
+
+function attachChipEvents(container){
+  container.querySelectorAll('.task-chip, .month-chip').forEach(chip=>{
+    chip.addEventListener('click', e=>{
+      if(e.target.classList.contains('chip-check')) return;
+      openModal(chip.dataset.id);
+    });
+    chip.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', chip.dataset.id);
+      chip.classList.add('drag-ghost');
+    });
+    chip.addEventListener('dragend', ()=> chip.classList.remove('drag-ghost'));
+  });
+  attachCheckboxEvents(container);
+}
+
+function attachDropZone(el, dateVal, forceCat){
+  el.addEventListener('dragover', e=>{ e.preventDefault(); e.stopPropagation(); el.classList.add('drag-over'); });
+  el.addEventListener('dragleave', ()=> el.classList.remove('drag-over'));
+  el.addEventListener('drop', async e=>{
+    e.preventDefault(); e.stopPropagation();
+    el.classList.remove('drag-over');
+    const id = e.dataTransfer.getData('text/plain');
+    const t = tasks.find(x=>x.id===id);
+    if(!t) return;
+    t.date = dateVal;
+    if(forceCat) t.cat = forceCat;
+    renderAll();
+    const patch = forceCat ? {date:dateVal, cat:forceCat} : {date:dateVal};
+    const { error } = await supabase.from('tasks').update(toDbTask(patch)).eq('id', id);
+    if(error) alert('Erro ao mover: '+error.message);
+  });
+}
+
+function renderAll(){
+  renderLegend();
+  renderWeek();
+  renderDay();
+  renderMonth();
+  renderBacklog();
+}
+
+// ---- task modal ----
+function openModal(taskId, prefillDate){
+  editingId = taskId;
+  const modalTitle = document.getElementById('modalTitle');
+  const fTitle = document.getElementById('fTitle');
+  const fDate = document.getElementById('fDate');
+  const fNoDate = document.getElementById('fNoDate');
+  const fTime = document.getElementById('fTime');
+  const fDesc = document.getElementById('fDesc');
+  const fDone = document.getElementById('fDone');
+  const btnDelete = document.getElementById('btnDelete');
+
+  let selectedCat = categories[0].key;
+  if(taskId){
+    const t = tasks.find(x=>x.id===taskId);
+    modalTitle.textContent = 'Editar tarefa';
+    fTitle.value = t.title;
+    fDate.value = t.date || '';
+    fNoDate.checked = !t.date;
+    fDate.disabled = !t.date;
+    fTime.value = t.time || '';
+    fDesc.value = t.desc || '';
+    fDone.checked = !!t.done;
+    selectedCat = t.cat;
+    btnDelete.style.display = 'block';
+  } else {
+    modalTitle.textContent = 'Nova tarefa';
+    fTitle.value = '';
+    fDate.value = prefillDate || todayISO();
+    fNoDate.checked = !prefillDate;
+    fDate.disabled = false;
+    fTime.value = '';
+    fDesc.value = '';
+    fDone.checked = false;
+    btnDelete.style.display = 'none';
+  }
+  renderCatSelect(selectedCat);
+  document.getElementById('modalOverlay').classList.add('open');
+  fTitle.focus();
+}
+
+document.getElementById('fNoDate').addEventListener('change', e=>{
+  document.getElementById('fDate').disabled = e.target.checked;
+});
+
+function renderCatSelect(selected){
+  const el = document.getElementById('fCatSelect');
+  el.innerHTML = categories.map(c=>
+    `<div class="cat-btn ${c.key===selected?'selected':''}" data-cat="${c.key}" style="color:${c.key===selected?c.color:''}">
+      <span class="cat-dot" style="background:${c.color}"></span>${c.emoji} ${escapeHtml(c.label)}
+    </div>`
+  ).join('');
+  el.querySelectorAll('.cat-btn').forEach(b=>{
+    b.onclick = ()=> renderCatSelect(b.dataset.cat);
+  });
+}
+
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); editingId = null; }
+
+async function handleSave(){
+  const title = document.getElementById('fTitle').value.trim();
+  if(!title){ document.getElementById('fTitle').focus(); return; }
+  const noDate = document.getElementById('fNoDate').checked;
+  const date = noDate ? null : (document.getElementById('fDate').value || null);
+  const time = document.getElementById('fTime').value || '';
+  const desc = document.getElementById('fDesc').value;
+  const done = document.getElementById('fDone').checked;
+  const catBtn = document.querySelector('.cat-btn.selected');
+  const cat = catBtn ? catBtn.dataset.cat : categories[0].key;
+  const patch = {title, date, time, desc, cat, done};
+
+  if(editingId){
+    const t = tasks.find(x=>x.id===editingId);
+    Object.assign(t, patch);
+    closeModal(); renderAll();
+    const { error } = await supabase.from('tasks').update(toDbTask(patch)).eq('id', editingId);
+    if(error) alert('Erro ao salvar: '+error.message);
+  } else {
+    const { data, error } = await supabase.from('tasks').insert(toDbTask(patch)).select().single();
+    if(error){ alert('Erro ao criar: '+error.message); return; }
+    tasks.push(fromDbTask(data));
+    closeModal(); renderAll();
+  }
+}
+
+async function handleDelete(){
+  if(!editingId) return;
+  const id = editingId;
+  tasks = tasks.filter(x=>x.id!==id);
+  closeModal(); renderAll();
+  const { error } = await supabase.from('tasks').delete().eq('id', id);
+  if(error) alert('Erro ao excluir: '+error.message);
+}
+
+// ---- category modal ----
+function openCatModal(){ catEditingKey = null; resetCatForm(); renderCatList(); document.getElementById('catModalOverlay').classList.add('open'); }
+function closeCatModal(){ document.getElementById('catModalOverlay').classList.remove('open'); catEditingKey = null; }
+function resetCatForm(){
+  document.getElementById('catEmoji').value = '';
+  document.getElementById('catLabel').value = '';
+  document.getElementById('catColor').value = '#A78BFA';
+  document.getElementById('btnCatSave').textContent = 'Adicionar';
+}
+function renderCatList(){
+  const el = document.getElementById('catList');
+  el.innerHTML = categories.map(c=>`
+    <div class="cat-manage-row" data-key="${c.key}">
+      <span class="cat-dot" style="background:${c.color}"></span>
+      <span class="cat-manage-label">${c.emoji} ${escapeHtml(c.label)}</span>
+      <button class="icon-btn" data-action="edit" data-key="${c.key}" title="Editar">&#9998;</button>
+      <button class="icon-btn" data-action="del" data-key="${c.key}" title="Excluir">&#10005;</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-action="edit"]').forEach(b=>{ b.onclick = ()=> startEditCat(b.dataset.key); });
+  el.querySelectorAll('[data-action="del"]').forEach(b=>{ b.onclick = ()=> deleteCat(b.dataset.key); });
+}
+function startEditCat(key){
+  const c = catByKey(key);
+  catEditingKey = key;
+  document.getElementById('catEmoji').value = c.emoji;
+  document.getElementById('catLabel').value = c.label;
+  document.getElementById('catColor').value = c.color;
+  document.getElementById('btnCatSave').textContent = 'Salvar edição';
+}
+async function deleteCat(key){
+  if(categories.length <= 1){ alert('É preciso manter pelo menos uma categoria.'); return; }
+  const cat = catByKey(key);
+  const fallback = categories.find(c=>c.key!==key);
+  tasks.forEach(t=>{ if(t.cat===key) t.cat = fallback.key; });
+  categories = categories.filter(c=>c.key!==key);
+  renderCatList(); renderAll();
+  if(catEditingKey===key){ catEditingKey=null; resetCatForm(); }
+
+  const { error: updErr } = await supabase.from('tasks').update({cat:fallback.key}).eq('cat', key);
+  if(updErr) console.error(updErr);
+  const { error: delErr } = await supabase.from('categories').delete().eq('id', cat.id);
+  if(delErr) alert('Erro ao excluir categoria: '+delErr.message);
+}
+async function handleCatSave(){
+  const emoji = document.getElementById('catEmoji').value.trim() || '🏷️';
+  const label = document.getElementById('catLabel').value.trim();
+  const color = document.getElementById('catColor').value;
+  if(!label){ document.getElementById('catLabel').focus(); return; }
+
+  if(catEditingKey){
+    const c = catByKey(catEditingKey);
+    c.emoji = emoji; c.label = label; c.color = color;
+    catEditingKey = null; resetCatForm(); renderCatList(); renderAll();
+    const { error } = await supabase.from('categories').update({emoji,label,color}).eq('id', c.id);
+    if(error) alert('Erro ao salvar categoria: '+error.message);
+  } else {
+    const key = slugify(label);
+    const { data, error } = await supabase.from('categories').insert({key,label,emoji,color}).select().single();
+    if(error){ alert('Erro ao criar categoria: '+error.message); return; }
+    categories.push({id:data.id, key:data.key, label:data.label, emoji:data.emoji, color:data.color});
+    resetCatForm(); renderCatList(); renderAll();
+  }
+}
+
+// ---- view toggle ----
+function setView(view){
+  document.getElementById('weekView').style.display = view==='week' ? 'block' : 'none';
+  document.getElementById('dayView').style.display = view==='day' ? 'block' : 'none';
+  document.getElementById('monthView').style.display = view==='month' ? 'block' : 'none';
+  document.getElementById('btnWeek').classList.toggle('active', view==='week');
+  document.getElementById('btnDay').classList.toggle('active', view==='day');
+  document.getElementById('btnMonth').classList.toggle('active', view==='month');
+}
+document.getElementById('btnWeek').onclick = ()=> setView('week');
+document.getElementById('btnDay').onclick = ()=> setView('day');
+document.getElementById('btnMonth').onclick = ()=> setView('month');
+
+document.getElementById('weekPrev').onclick = ()=>{ currentWeekStart = addDays(currentWeekStart, -7); renderWeek(); };
+document.getElementById('weekNext').onclick = ()=>{ currentWeekStart = addDays(currentWeekStart, 7); renderWeek(); };
+document.getElementById('weekToday').onclick = ()=>{ currentWeekStart = getMonday(new Date()); renderWeek(); };
+
+document.getElementById('dayPrev').onclick = ()=>{ currentDate = toISO(addDays(fromISO(currentDate), -1)); renderDay(); };
+document.getElementById('dayNext').onclick = ()=>{ currentDate = toISO(addDays(fromISO(currentDate), 1)); renderDay(); };
+document.getElementById('dayToday').onclick = ()=>{ currentDate = todayISO(); renderDay(); };
+
+document.getElementById('monthPrev').onclick = ()=>{ currentMonthCursor = new Date(currentMonthCursor.getFullYear(), currentMonthCursor.getMonth()-1, 1); renderMonth(); };
+document.getElementById('monthNext').onclick = ()=>{ currentMonthCursor = new Date(currentMonthCursor.getFullYear(), currentMonthCursor.getMonth()+1, 1); renderMonth(); };
+document.getElementById('monthToday').onclick = ()=>{ currentMonthCursor = new Date(); renderMonth(); };
+
+document.getElementById('btnAddBacklog').onclick = ()=> openModal(null, null);
+document.getElementById('btnCancel').onclick = closeModal;
+document.getElementById('btnSave').onclick = handleSave;
+document.getElementById('btnDelete').onclick = handleDelete;
+document.getElementById('modalOverlay').addEventListener('click', e=>{ if(e.target.id==='modalOverlay') closeModal(); });
+
+document.getElementById('btnManageCats').onclick = openCatModal;
+document.getElementById('btnCatClose').onclick = closeCatModal;
+document.getElementById('btnCatSave').onclick = handleCatSave;
+document.getElementById('catModalOverlay').addEventListener('click', e=>{ if(e.target.id==='catModalOverlay') closeCatModal(); });
+
+setInterval(()=>{
+  const t = todayISO();
+  if(t !== lastKnownToday){
+    lastKnownToday = t;
+    currentWeekStart = getMonday(new Date());
+    currentDate = t;
+    currentMonthCursor = new Date();
+    renderAll();
+  }
+}, 60000);
+
+// ============================================================
+// AUTENTICAÇÃO
+// ============================================================
+let authMode = 'login';
+
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Entrar' : 'Criar conta';
+  document.getElementById('authMsg').textContent = '';
+  document.getElementById('authMsg').className = 'auth-msg';
+}
+document.getElementById('tabLogin').onclick = ()=> setAuthMode('login');
+document.getElementById('tabSignup').onclick = ()=> setAuthMode('signup');
+
+function showAuthMsg(text, type){
+  const el = document.getElementById('authMsg');
+  el.textContent = text;
+  el.className = 'auth-msg ' + (type||'');
+}
+
+document.getElementById('authSubmitBtn').addEventListener('click', async ()=>{
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  if(!email || !password){ showAuthMsg('Preencha e-mail e senha.', 'error'); return; }
+
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true;
+  showAuthMsg('', '');
+
+  let result;
+  if(authMode === 'signup'){
+    result = await supabase.auth.signUp({ email, password });
+  } else {
+    result = await supabase.auth.signInWithPassword({ email, password });
+  }
+  btn.disabled = false;
+
+  if(result.error){ showAuthMsg(result.error.message, 'error'); return; }
+
+  if(authMode === 'signup' && !result.data.session){
+    showAuthMsg('Conta criada! Verifique seu e-mail para confirmar antes de entrar.', 'success');
+    return;
+  }
+  // sucesso: onAuthStateChange cuida de mostrar o app
+});
+
+document.getElementById('btnLogout').addEventListener('click', async ()=>{
+  await supabase.auth.signOut();
+});
+
+async function showApp(user){
+  currentUser = user;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('userEmailLabel').textContent = user.email;
+  await initUserContent();
+  renderAll();
+}
+function showAuth(){
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+}
+
+supabase.auth.onAuthStateChange((event, session)=>{
+  if(session && session.user){
+    showApp(session.user);
+  } else {
+    showAuth();
+  }
+});
+</script>
+</body>
+</html>

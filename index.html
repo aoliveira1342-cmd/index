@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Semana de Treino</title>
+<title>Treino App</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -18,7 +18,6 @@
   *{box-sizing:border-box;}
   html,body{margin:0;background:var(--bg);}
   body{color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;}
-  .app{max-width:1200px;margin:0 auto;padding:20px 16px 60px;}
   input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;}
 
   /* ---- AUTH SCREEN ---- */
@@ -39,17 +38,41 @@
   .auth-msg.error{color:#E85D5D;}
   .auth-msg.success{color:#2DD4BF;}
 
-  /* ---- APP SCREEN ---- */
+  /* ---- APP SHELL ---- */
   #appScreen{display:none;}
-  .app-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px;}
-  .app-title{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:1px;margin:0;line-height:1;}
-  .app-title span{color:var(--accent);}
-  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .user-badge{font-size:12px;color:var(--muted);}
-  .icon-toggle-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);width:34px;height:34px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .shell{display:flex;min-height:100vh;}
+
+  .sidebar{width:230px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--lane);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sidebar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;}
+  .sidebar-logo{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;}
+  .sidebar-logo span{color:var(--accent);}
+  .sidebar-close{display:none;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+  .sidebar-nav{display:flex;flex-direction:column;gap:4px;flex:1;}
+  .nav-item{background:transparent;border:none;color:var(--muted);text-align:left;padding:11px 12px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;}
+  .nav-item:hover{background:var(--surface2);color:var(--text);}
+  .nav-item.active{background:color-mix(in srgb, var(--accent) 16%, transparent);color:var(--accent);}
+  .sidebar-footer{border-top:1px solid var(--lane);padding-top:14px;margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+  .sidebar-footer .user-badge{font-size:11px;color:var(--muted);word-break:break-all;}
+  .sidebar-footer-actions{display:flex;gap:8px;}
+  .icon-toggle-btn{background:var(--bg);border:1px solid var(--lane);color:var(--text);width:36px;height:36px;border-radius:6px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .icon-toggle-btn:hover{border-color:var(--accent);}
-  .logout-btn{background:transparent;border:1px solid var(--lane);color:var(--muted);font-size:12px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+  .logout-btn{flex:1;background:var(--bg);border:1px solid var(--lane);color:var(--muted);font-size:12px;font-weight:600;padding:0 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
   .logout-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .main-area{flex:1;min-width:0;}
+  .page{padding:20px 24px 60px;max-width:1200px;margin:0 auto;}
+  .page-title{font-family:'Bebas Neue';font-size:38px;letter-spacing:1px;margin:14px 0;}
+  .page-placeholder-note{color:var(--muted);font-size:13px;}
+
+  .mobile-topbar{display:none;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--lane);position:sticky;top:0;background:var(--bg);z-index:20;}
+  .hamburger-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);width:38px;height:38px;border-radius:6px;font-size:18px;cursor:pointer;flex-shrink:0;}
+  .mobile-topbar-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;}
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;}
+  .sidebar-backdrop.open{display:block;}
+
+  .app-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px;}
+  .app-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:1px;margin:0;line-height:1;}
+  .app-title span{color:var(--accent);}
   .view-toggle{display:flex;gap:0;border:1px solid var(--lane);border-radius:6px;overflow:hidden;}
   .view-toggle button{background:var(--surface);color:var(--muted);border:none;font-family:'Inter';font-weight:600;font-size:13px;letter-spacing:.04em;padding:9px 16px;cursor:pointer;text-transform:uppercase;}
   .view-toggle button.active{background:var(--accent);color:#12151B;}
@@ -58,6 +81,7 @@
   .legend-pill{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--lane);padding:5px 10px 5px 8px;border-radius:20px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none;}
   .legend-pill.active{border-color:var(--accent);color:var(--text);background:color-mix(in srgb, var(--accent) 14%, transparent);}
   .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .legend-hint{font-size:10.5px;color:var(--muted);}
   .manage-cats-btn{background:transparent;border:1px dashed var(--lane);color:var(--muted);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;}
   .manage-cats-btn:hover{border-color:var(--accent);color:var(--accent);}
 
@@ -136,7 +160,7 @@
   .backlog-col-head{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;letter-spacing:.02em;}
   .backlog-col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:50;padding:16px;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:150;padding:16px;}
   .modal-overlay.open{display:flex;}
   .modal{background:var(--surface);border:1px solid var(--lane);border-radius:10px;width:100%;max-width:420px;padding:22px;max-height:90vh;overflow-y:auto;}
   .modal h3{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;margin:0 0 16px;}
@@ -169,13 +193,20 @@
   .cat-form input[type=color]{width:44px;height:40px;padding:2px;border:1px solid var(--lane);border-radius:6px;background:var(--bg);cursor:pointer;}
   .cat-form input[type=text].emoji-input{width:52px;text-align:center;font-size:16px;padding:9px 4px;}
 
-  /* ============ MOBILE ============ */
+  /* ============ SIDEBAR MOBILE BEHAVIOR ============ */
+  @media (max-width:900px){
+    .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .25s ease;z-index:100;box-shadow:2px 0 24px rgba(0,0,0,0.35);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-close{display:block;}
+    .mobile-topbar{display:flex;}
+  }
+
+  /* ============ GENERAL MOBILE ============ */
   @media (max-width:700px){
-    .app{padding:14px 10px 40px;}
-    .app-title{font-size:30px;}
+    .page{padding:14px 12px 40px;}
+    .app-title{font-size:28px;}
     .app-header{gap:10px;}
-    .header-right{width:100%;justify-content:space-between;}
-    .view-toggle{flex:1;}
+    .view-toggle{width:100%;}
     .view-toggle button{flex:1;padding:11px 6px;font-size:12px;}
 
     .legend{gap:6px;}
@@ -186,7 +217,6 @@
     .nav-btn{width:40px;}
     .range-label{font-size:18px;}
 
-    /* week becomes a vertical agenda list instead of horizontal paging */
     .week-grid{display:block;border-top:none;}
     .day-col{width:100%;border-right:none;border-bottom:1px solid var(--lane);min-height:auto;padding:16px 4px;background:none;}
     .day-col:last-child{border-bottom:none;}
@@ -202,8 +232,6 @@
     .modal h3{font-size:22px;}
 
     .backlog-col{min-width:170px;}
-
-    .icon-toggle-btn,.logout-btn{height:38px;}
   }
 </style>
 </head>
@@ -211,7 +239,7 @@
 
 <div id="authScreen">
   <div class="auth-card">
-    <h1 class="auth-title">Semana de <span>Treino</span></h1>
+    <h1 class="auth-title">Treino<span>App</span></h1>
     <div class="auth-sub">Entre ou crie sua conta para acessar seus treinos</div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tabLogin">Entrar</button>
@@ -231,71 +259,111 @@
 </div>
 
 <div id="appScreen">
-<div class="app">
-  <div class="app-header">
-    <h1 class="app-title">Semana de <span>Treino</span></h1>
-    <div class="header-right">
-      <span class="user-badge" id="userEmailLabel"></span>
-      <button class="icon-toggle-btn" id="btnTheme" title="Alternar tema">🌙</button>
-      <button class="logout-btn" id="btnLogout">Sair</button>
-      <div class="view-toggle">
-        <button id="btnWeek" class="active">Semana</button>
-        <button id="btnDay">Dia</button>
-        <button id="btnMonth">Mês</button>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-logo">Treino<span>App</span></div>
+        <button class="sidebar-close" id="sidebarClose">✕</button>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-page="desafio">🏁 Desafio</button>
+        <button class="nav-item" data-page="conta">👤 Minha conta</button>
+        <button class="nav-item" data-page="conteudo">🎬 Criação de Conteúdo</button>
+        <button class="nav-item" data-page="financas">💰 Finanças</button>
+        <button class="nav-item" data-page="campanhas">📣 Campanhas</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="user-badge" id="userEmailLabel"></span>
+        <div class="sidebar-footer-actions">
+          <button class="icon-toggle-btn" id="btnTheme" title="Alternar tema">🌙</button>
+          <button class="logout-btn" id="btnLogout">Sair</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <div class="mobile-topbar">
+        <button class="hamburger-btn" id="sidebarOpen">☰</button>
+        <div class="mobile-topbar-title" id="mobileTopbarTitle">Desafio</div>
+      </div>
+
+      <div class="page" id="page-desafio">
+        <div class="app-header">
+          <h1 class="app-title">Semana de <span>Treino</span></h1>
+          <div class="view-toggle">
+            <button id="btnWeek" class="active">Semana</button>
+            <button id="btnDay">Dia</button>
+            <button id="btnMonth">Mês</button>
+          </div>
+        </div>
+
+        <div class="legend" id="legend"></div>
+        <div class="legend-hint">clique para filtrar (pode selecionar mais de uma categoria)</div>
+
+        <div id="weekView">
+          <div class="view-nav">
+            <div class="nav-left">
+              <button class="nav-btn" id="weekPrev">‹</button>
+              <button class="nav-today-btn" id="weekToday">Hoje</button>
+              <button class="nav-btn" id="weekNext">›</button>
+            </div>
+            <div class="range-label" id="weekRangeLabel"></div>
+          </div>
+          <div class="week-track"><div class="week-grid" id="weekGrid"></div></div>
+        </div>
+
+        <div id="dayView">
+          <div class="view-nav">
+            <div class="nav-left">
+              <button class="nav-btn" id="dayPrev">‹</button>
+              <button class="nav-today-btn" id="dayToday">Hoje</button>
+              <button class="nav-btn" id="dayNext">›</button>
+            </div>
+            <div class="range-label" id="dayRangeLabel"></div>
+          </div>
+          <div class="day-schedule" id="daySchedule"></div>
+        </div>
+
+        <div id="monthView">
+          <div class="view-nav">
+            <div class="nav-left">
+              <button class="nav-btn" id="monthPrev">‹</button>
+              <button class="nav-today-btn" id="monthToday">Hoje</button>
+              <button class="nav-btn" id="monthNext">›</button>
+            </div>
+            <div class="range-label" id="monthRangeLabel"></div>
+          </div>
+          <div class="month-weekday-heads" id="monthWeekdayHeads"></div>
+          <div class="month-grid" id="monthGrid"></div>
+        </div>
+
+        <div class="backlog">
+          <div class="backlog-head">
+            <div class="backlog-title">Backlog</div>
+            <div class="backlog-actions">
+              <button class="backlog-add" id="btnManageCats">Categorias</button>
+              <button class="backlog-add" id="btnAddBacklog">+ Nova tarefa</button>
+            </div>
+          </div>
+          <div class="backlog-columns" id="backlogColumns"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-conta" style="display:none;">
+        <h2 class="page-title">Minha conta</h2>
+      </div>
+      <div class="page" id="page-conteudo" style="display:none;">
+        <h2 class="page-title">Criação de Conteúdo</h2>
+      </div>
+      <div class="page" id="page-financas" style="display:none;">
+        <h2 class="page-title">Finanças</h2>
+      </div>
+      <div class="page" id="page-campanhas" style="display:none;">
+        <h2 class="page-title">Campanhas</h2>
       </div>
     </div>
   </div>
-
-  <div class="legend" id="legend"></div>
-
-  <div id="weekView">
-    <div class="view-nav">
-      <div class="nav-left">
-        <button class="nav-btn" id="weekPrev">‹</button>
-        <button class="nav-today-btn" id="weekToday">Hoje</button>
-        <button class="nav-btn" id="weekNext">›</button>
-      </div>
-      <div class="range-label" id="weekRangeLabel"></div>
-    </div>
-    <div class="week-track"><div class="week-grid" id="weekGrid"></div></div>
-  </div>
-
-  <div id="dayView">
-    <div class="view-nav">
-      <div class="nav-left">
-        <button class="nav-btn" id="dayPrev">‹</button>
-        <button class="nav-today-btn" id="dayToday">Hoje</button>
-        <button class="nav-btn" id="dayNext">›</button>
-      </div>
-      <div class="range-label" id="dayRangeLabel"></div>
-    </div>
-    <div class="day-schedule" id="daySchedule"></div>
-  </div>
-
-  <div id="monthView">
-    <div class="view-nav">
-      <div class="nav-left">
-        <button class="nav-btn" id="monthPrev">‹</button>
-        <button class="nav-today-btn" id="monthToday">Hoje</button>
-        <button class="nav-btn" id="monthNext">›</button>
-      </div>
-      <div class="range-label" id="monthRangeLabel"></div>
-    </div>
-    <div class="month-weekday-heads" id="monthWeekdayHeads"></div>
-    <div class="month-grid" id="monthGrid"></div>
-  </div>
-
-  <div class="backlog">
-    <div class="backlog-head">
-      <div class="backlog-title">Backlog</div>
-      <div class="backlog-actions">
-        <button class="backlog-add" id="btnManageCats">Categorias</button>
-        <button class="backlog-add" id="btnAddBacklog">+ Nova tarefa</button>
-      </div>
-    </div>
-    <div class="backlog-columns" id="backlogColumns"></div>
-  </div>
-</div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -361,6 +429,7 @@ const DEFAULT_CATS = [
 const WEEKDAY_SHORT = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const WEEKDAY_FULL = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const PAGE_TITLES = { desafio:'Desafio', conta:'Minha conta', conteudo:'Criação de Conteúdo', financas:'Finanças', campanhas:'Campanhas' };
 
 let tasks = [];
 let categories = [];
@@ -371,7 +440,7 @@ let editingId = null;
 let catEditingKey = null;
 let lastKnownToday = todayISO();
 let currentUser = null;
-let activeFilterCat = null; // null = mostra todas as categorias
+let activeFilterCats = new Set(); // vazio = mostra todas as categorias
 
 function pad(n){ return String(n).padStart(2,'0'); }
 function toISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
@@ -390,7 +459,7 @@ function slugify(label){
   return key;
 }
 function catByKey(key){ return categories.find(c=>c.key===key) || categories[0]; }
-function visibleTasks(){ return activeFilterCat ? tasks.filter(t=>t.cat===activeFilterCat) : tasks; }
+function visibleTasks(){ return activeFilterCats.size===0 ? tasks : tasks.filter(t=>activeFilterCats.has(t.cat)); }
 
 // ---- DB <-> local mapping ----
 function fromDbTask(row){
@@ -453,13 +522,20 @@ async function initUserContent(){
 
 function renderLegend(){
   const el = document.getElementById('legend');
-  el.innerHTML = `<div class="legend-pill ${activeFilterCat===null?'active':''}" data-catfilter="">Todas</div>` +
+  const allActive = activeFilterCats.size === 0;
+  el.innerHTML = `<div class="legend-pill ${allActive?'active':''}" data-catfilter="__all__">Todas</div>` +
     categories.map(c=>
-      `<div class="legend-pill ${activeFilterCat===c.key?'active':''}" data-catfilter="${c.key}"><span class="legend-dot" style="background:${c.color}"></span>${c.emoji} ${c.label}</div>`
+      `<div class="legend-pill ${activeFilterCats.has(c.key)?'active':''}" data-catfilter="${c.key}"><span class="legend-dot" style="background:${c.color}"></span>${c.emoji} ${c.label}</div>`
     ).join('') + `<button class="manage-cats-btn" id="legendManageBtn">+ gerenciar categorias</button>`;
   document.getElementById('legendManageBtn').onclick = openCatModal;
   el.querySelectorAll('[data-catfilter]').forEach(p=>{
-    p.onclick = ()=>{ activeFilterCat = p.dataset.catfilter || null; renderAll(); };
+    p.onclick = ()=>{
+      const key = p.dataset.catfilter;
+      if(key === '__all__'){ activeFilterCats.clear(); }
+      else if(activeFilterCats.has(key)){ activeFilterCats.delete(key); }
+      else { activeFilterCats.add(key); }
+      renderAll();
+    };
   });
 }
 
@@ -823,7 +899,7 @@ async function deleteCat(key){
   const fallback = categories.find(c=>c.key!==key);
   tasks.forEach(t=>{ if(t.cat===key) t.cat = fallback.key; });
   categories = categories.filter(c=>c.key!==key);
-  if(activeFilterCat===key) activeFilterCat = null;
+  activeFilterCats.delete(key);
   renderCatList(); renderAll();
   if(catEditingKey===key){ catEditingKey=null; resetCatForm(); }
 
@@ -853,7 +929,7 @@ async function handleCatSave(){
   }
 }
 
-// ---- view toggle ----
+// ---- view toggle (dentro da página Desafio) ----
 function setView(view){
   document.getElementById('weekView').style.display = view==='week' ? 'block' : 'none';
   document.getElementById('dayView').style.display = view==='day' ? 'block' : 'none';
@@ -900,6 +976,27 @@ setInterval(()=>{
     renderAll();
   }
 }, 60000);
+
+// ============================================================
+// SIDEBAR / NAVEGAÇÃO ENTRE PÁGINAS
+// ============================================================
+function setPage(pageKey){
+  document.querySelectorAll('.page').forEach(p=> p.style.display = 'none');
+  const target = document.getElementById('page-'+pageKey);
+  if(target) target.style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(b=> b.classList.toggle('active', b.dataset.page===pageKey));
+  document.getElementById('mobileTopbarTitle').textContent = PAGE_TITLES[pageKey] || '';
+  closeSidebar();
+}
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click', ()=> setPage(btn.dataset.page));
+});
+
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarBackdrop').classList.add('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarBackdrop').classList.remove('open'); }
+document.getElementById('sidebarOpen').addEventListener('click', openSidebar);
+document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
 
 // ============================================================
 // TEMA CLARO / ESCURO

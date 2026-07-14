@@ -167,6 +167,44 @@
   .backlog-col-head{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;letter-spacing:.02em;}
   .backlog-col-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 
+  /* ---- DESAFIO (habit tracker) ---- */
+  .challenge-sub{color:var(--muted);font-size:13px;margin:-6px 0 16px;}
+  .duration-picker{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;}
+  .duration-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);padding:14px 22px;border-radius:10px;font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;cursor:pointer;}
+  .duration-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  .habits-card{background:var(--surface);border:1px solid var(--lane);border-radius:12px;padding:20px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:28px;}
+  .legend-circle{width:84px;height:84px;border-radius:50%;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;border:2px solid var(--lane);flex-shrink:0;}
+  .habit-inputs{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-width:240px;}
+  .habit-input-row{display:flex;align-items:center;gap:8px;}
+  .habit-color-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+  .habit-input-row input{flex:1;background:var(--bg);border:1px solid var(--lane);color:var(--text);padding:9px 10px;border-radius:6px;font-size:13px;}
+
+  .days-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;}
+  .days-progress{font-size:13px;color:var(--muted);}
+  .days-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:16px 10px;max-width:640px;}
+  .day-cell{display:flex;flex-direction:column;align-items:center;gap:5px;}
+  .day-circle{width:52px;height:52px;border-radius:50%;overflow:hidden;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;border:2px solid var(--lane);}
+  .day-circle .quad{background:var(--surface2);border:none;padding:0;cursor:pointer;transition:filter .15s;}
+  .day-circle .quad:hover{filter:brightness(1.2);}
+  .quad-tl{border-right:1px solid var(--bg);border-bottom:1px solid var(--bg);}
+  .quad-tr{border-bottom:1px solid var(--bg);}
+  .quad-bl{border-right:1px solid var(--bg);}
+  .day-num{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);}
+
+  .challenge-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);padding:9px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;}
+  .challenge-btn:hover{border-color:var(--accent);}
+  .challenge-btn-danger{color:#E85D5D;border-color:#E85D5D44;}
+  .challenge-btn-danger:hover{border-color:#E85D5D;}
+
+  @media (max-width:700px){
+    .days-grid{gap:10px 6px;}
+    .day-circle{width:42px;height:42px;}
+    .habits-card{padding:16px;gap:16px;}
+    .legend-circle{width:64px;height:64px;}
+  }
+
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:150;padding:16px;}
   .modal-overlay.open{display:flex;}
   .modal{background:var(--surface);border:1px solid var(--lane);border-radius:10px;width:100%;max-width:420px;padding:22px;max-height:90vh;overflow-y:auto;}
@@ -350,7 +388,26 @@
     </div>
 
     <div class="page" id="page-desafio" style="display:none;">
-      <h2 class="page-title">Desafio</h2>
+      <h2 class="page-title">Desafio dos Inegociáveis</h2>
+
+      <div id="challengeSetup">
+        <div class="challenge-sub">Escolha por quantos dias você quer se comprometer. Depois só é possível aumentar — para reduzir, use "Recomeçar".</div>
+        <div class="duration-picker" id="durationPicker"></div>
+      </div>
+
+      <div id="challengeMain" style="display:none;">
+        <div class="habits-card">
+          <div class="legend-circle" id="legendCircle"></div>
+          <div class="habit-inputs" id="habitInputs"></div>
+        </div>
+
+        <div class="days-toolbar">
+          <div class="days-progress" id="daysProgress"></div>
+          <div class="days-actions" id="daysActions"></div>
+        </div>
+
+        <div class="days-grid" id="daysGrid"></div>
+      </div>
     </div>
     <div class="page" id="page-conta" style="display:none;">
       <h2 class="page-title">Minha conta</h2>
@@ -431,6 +488,9 @@ const WEEKDAY_SHORT = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const WEEKDAY_FULL = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const PAGE_TITLES = { inicio:'Início', desafio:'Desafio', conta:'Minha conta', conteudo:'Criação de Conteúdo', financas:'Finanças', campanhas:'Campanhas' };
+const HABIT_COLORS = ['#FF4B3E','#2DD4BF','#F5B942','#A78BFA'];
+const QUAD_KEYS = ['tl','tr','bl','br'];
+let challenge = null; // {duration, habits:[4 strings], progress:{ "1":[bool,bool,bool,bool], ... }}
 
 let tasks = [];
 let categories = [];
@@ -930,6 +990,131 @@ async function handleCatSave(){
   }
 }
 
+// ============================================================
+// DESAFIO DOS INEGOCIÁVEIS (habit tracker)
+// ============================================================
+async function loadChallenge(){
+  const { data, error } = await supabase.from('challenge').select('*').maybeSingle();
+  if(error) console.error(error);
+  challenge = data ? { duration:data.duration, habits:(data.habits && data.habits.length===4 ? data.habits : ['','','','']), progress:data.progress || {} } : null;
+  renderChallenge();
+}
+
+function renderChallenge(){
+  const setupEl = document.getElementById('challengeSetup');
+  const mainEl = document.getElementById('challengeMain');
+  if(!challenge){
+    setupEl.style.display = 'block';
+    mainEl.style.display = 'none';
+    renderDurationPicker();
+    return;
+  }
+  setupEl.style.display = 'none';
+  mainEl.style.display = 'block';
+  renderLegendCircle();
+  renderHabitInputs();
+  renderDaysGrid();
+  renderDaysToolbar();
+}
+
+function renderDurationPicker(){
+  const el = document.getElementById('durationPicker');
+  el.innerHTML = [7,15,30,40,60].map(d=>`<button class="duration-btn" data-d="${d}">${d} dias</button>`).join('');
+  el.querySelectorAll('.duration-btn').forEach(b=>{
+    b.onclick = ()=> startChallenge(parseInt(b.dataset.d));
+  });
+}
+
+async function startChallenge(duration){
+  challenge = { duration, habits:['','','',''], progress:{} };
+  renderChallenge();
+  const { error } = await supabase.from('challenge').upsert({ duration, habits:challenge.habits, progress:{} });
+  if(error) alert('Erro ao iniciar desafio: '+error.message);
+}
+
+function renderLegendCircle(){
+  const el = document.getElementById('legendCircle');
+  el.innerHTML = HABIT_COLORS.map((c,i)=>`<div class="quad quad-${QUAD_KEYS[i]}" style="background:${c};opacity:.85;"></div>`).join('');
+}
+
+function renderHabitInputs(){
+  const el = document.getElementById('habitInputs');
+  el.innerHTML = challenge.habits.map((h,i)=>`
+    <div class="habit-input-row">
+      <span class="habit-color-dot" style="background:${HABIT_COLORS[i]}"></span>
+      <input type="text" data-idx="${i}" value="${escapeHtml(h)}" placeholder="Hábito ${i+1}">
+    </div>
+  `).join('');
+  el.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', async e=>{
+      const idx = parseInt(e.target.dataset.idx);
+      challenge.habits[idx] = e.target.value;
+      const { error } = await supabase.from('challenge').update({habits:challenge.habits}).eq('user_id', currentUser.id);
+      if(error) alert('Erro ao salvar hábito: '+error.message);
+    });
+  });
+}
+
+function renderDaysGrid(){
+  const el = document.getElementById('daysGrid');
+  let html = '';
+  for(let day=1; day<=challenge.duration; day++){
+    const state = challenge.progress[day] || [false,false,false,false];
+    html += `<div class="day-cell">
+      <div class="day-circle">
+        ${[0,1,2,3].map(i=>`<div class="quad quad-${QUAD_KEYS[i]}" data-day="${day}" data-q="${i}" style="${state[i]?`background:${HABIT_COLORS[i]};`:''}"></div>`).join('')}
+      </div>
+      <div class="day-num">${day}</div>
+    </div>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.quad').forEach(q=>{
+    q.addEventListener('click', ()=> toggleQuad(parseInt(q.dataset.day), parseInt(q.dataset.q)));
+  });
+}
+
+async function toggleQuad(day, qIdx){
+  const state = challenge.progress[day] ? challenge.progress[day].slice() : [false,false,false,false];
+  state[qIdx] = !state[qIdx];
+  challenge.progress[day] = state;
+  renderDaysGrid();
+  renderDaysToolbar();
+  const { error } = await supabase.from('challenge').update({progress:challenge.progress}).eq('user_id', currentUser.id);
+  if(error) alert('Erro ao salvar: '+error.message);
+}
+
+function renderDaysToolbar(){
+  const totalSlots = challenge.duration * 4;
+  let filled = 0;
+  Object.values(challenge.progress).forEach(arr=> arr.forEach(v=>{ if(v) filled++; }));
+  document.getElementById('daysProgress').textContent = `${filled} de ${totalSlots} hábitos concluídos • desafio de ${challenge.duration} dias`;
+
+  const el = document.getElementById('daysActions');
+  const higher = [7,15,30,40,60].filter(d=>d>challenge.duration);
+  let html = higher.map(d=>`<button class="challenge-btn" data-inc="${d}">Aumentar para ${d} dias</button>`).join('');
+  html += `<button class="challenge-btn challenge-btn-danger" id="btnResetChallenge">Recomeçar</button>`;
+  el.innerHTML = html;
+  el.querySelectorAll('[data-inc]').forEach(b=>{
+    b.onclick = ()=> increaseDuration(parseInt(b.dataset.inc));
+  });
+  document.getElementById('btnResetChallenge').onclick = resetChallenge;
+}
+
+async function increaseDuration(newDuration){
+  challenge.duration = newDuration;
+  renderChallenge();
+  const { error } = await supabase.from('challenge').update({duration:newDuration}).eq('user_id', currentUser.id);
+  if(error) alert('Erro ao aumentar duração: '+error.message);
+}
+
+async function resetChallenge(){
+  if(!confirm('Isso vai apagar todo o progresso do desafio atual, os hábitos definidos e voltar para a escolha de duração. Tem certeza?')) return;
+  challenge = null;
+  renderChallenge();
+  const { error } = await supabase.from('challenge').delete().eq('user_id', currentUser.id);
+  if(error) alert('Erro ao recomeçar: '+error.message);
+}
+
 // ---- view toggle (dentro da página Início) ----
 function setView(view){
   document.getElementById('weekView').style.display = view==='week' ? 'block' : 'none';
@@ -1079,6 +1264,7 @@ async function showApp(user){
   document.getElementById('userEmailLabel').textContent = user.email;
   await initUserContent();
   renderAll();
+  await loadChallenge();
 }
 function showAuth(){
   document.getElementById('authScreen').style.display = 'flex';

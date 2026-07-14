@@ -38,15 +38,24 @@
   .auth-msg.error{color:#E85D5D;}
   .auth-msg.success{color:#2DD4BF;}
 
-  /* ---- APP SHELL ---- */
+  /* ---- APP SHELL (menu gaveta em qualquer tamanho de tela) ---- */
   #appScreen{display:none;}
-  .shell{display:flex;min-height:100vh;}
 
-  .sidebar{width:230px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--lane);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;}
+  .sidebar-backdrop.open{display:block;}
+
+  .sidebar{
+    position:fixed;left:0;top:0;height:100vh;width:240px;
+    background:var(--surface);border-right:1px solid var(--lane);
+    display:flex;flex-direction:column;padding:20px 14px;overflow-y:auto;
+    transform:translateX(-100%);transition:transform .25s ease;z-index:100;
+    box-shadow:2px 0 24px rgba(0,0,0,0.35);
+  }
+  .sidebar.open{transform:translateX(0);}
   .sidebar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;}
   .sidebar-logo{font-family:'Bebas Neue';font-size:24px;letter-spacing:1px;}
   .sidebar-logo span{color:var(--accent);}
-  .sidebar-close{display:none;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+  .sidebar-close{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
   .sidebar-nav{display:flex;flex-direction:column;gap:4px;flex:1;}
   .nav-item{background:transparent;border:none;color:var(--muted);text-align:left;padding:11px 12px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;}
   .nav-item:hover{background:var(--surface2);color:var(--text);}
@@ -59,16 +68,14 @@
   .logout-btn{flex:1;background:var(--bg);border:1px solid var(--lane);color:var(--muted);font-size:12px;font-weight:600;padding:0 10px;border-radius:6px;cursor:pointer;white-space:nowrap;}
   .logout-btn:hover{border-color:var(--accent);color:var(--accent);}
 
-  .main-area{flex:1;min-width:0;}
+  .main-area{width:100%;}
   .page{padding:20px 24px 60px;max-width:1200px;margin:0 auto;}
   .page-title{font-family:'Bebas Neue';font-size:38px;letter-spacing:1px;margin:14px 0;}
-  .page-placeholder-note{color:var(--muted);font-size:13px;}
 
-  .mobile-topbar{display:none;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--lane);position:sticky;top:0;background:var(--bg);z-index:20;}
+  .topbar{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--lane);position:sticky;top:0;background:var(--bg);z-index:20;}
   .hamburger-btn{background:var(--surface);border:1px solid var(--lane);color:var(--text);width:38px;height:38px;border-radius:6px;font-size:18px;cursor:pointer;flex-shrink:0;}
-  .mobile-topbar-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;}
-  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;}
-  .sidebar-backdrop.open{display:block;}
+  .hamburger-btn:hover{border-color:var(--accent);}
+  .topbar-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:1px;}
 
   .app-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px;}
   .app-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:1px;margin:0;line-height:1;}
@@ -193,15 +200,7 @@
   .cat-form input[type=color]{width:44px;height:40px;padding:2px;border:1px solid var(--lane);border-radius:6px;background:var(--bg);cursor:pointer;}
   .cat-form input[type=text].emoji-input{width:52px;text-align:center;font-size:16px;padding:9px 4px;}
 
-  /* ============ SIDEBAR MOBILE BEHAVIOR ============ */
-  @media (max-width:900px){
-    .sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);transition:transform .25s ease;z-index:100;box-shadow:2px 0 24px rgba(0,0,0,0.35);}
-    .sidebar.open{transform:translateX(0);}
-    .sidebar-close{display:block;}
-    .mobile-topbar{display:flex;}
-  }
-
-  /* ============ GENERAL MOBILE ============ */
+  /* ============ MOBILE (mantém a semana com scroll lateral) ============ */
   @media (max-width:700px){
     .page{padding:14px 12px 40px;}
     .app-title{font-size:28px;}
@@ -217,10 +216,9 @@
     .nav-btn{width:40px;}
     .range-label{font-size:18px;}
 
-    .week-grid{display:block;border-top:none;}
-    .day-col{width:100%;border-right:none;border-bottom:1px solid var(--lane);min-height:auto;padding:16px 4px;background:none;}
-    .day-col:last-child{border-bottom:none;}
-    .day-col-head{font-size:22px;}
+    .week-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+    .day-col{min-width:82vw;flex-shrink:0;scroll-snap-align:start;border-right:1px dashed var(--lane);}
+    .day-col:last-child{border-right:none;}
 
     .task-chip{padding:12px 12px 12px 14px;}
     .task-title{font-size:14px;}
@@ -260,108 +258,111 @@
 
 <div id="appScreen">
   <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-  <div class="shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-top">
-        <div class="sidebar-logo">Treino<span>App</span></div>
-        <button class="sidebar-close" id="sidebarClose">✕</button>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo">Treino<span>App</span></div>
+      <button class="sidebar-close" id="sidebarClose">✕</button>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="inicio">🏠 Início</button>
+      <button class="nav-item" data-page="desafio">🏁 Desafio</button>
+      <button class="nav-item" data-page="conta">👤 Minha conta</button>
+      <button class="nav-item" data-page="conteudo">🎬 Criação de Conteúdo</button>
+      <button class="nav-item" data-page="financas">💰 Finanças</button>
+      <button class="nav-item" data-page="campanhas">📣 Campanhas</button>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="user-badge" id="userEmailLabel"></span>
+      <div class="sidebar-footer-actions">
+        <button class="icon-toggle-btn" id="btnTheme" title="Alternar tema">🌙</button>
+        <button class="logout-btn" id="btnLogout">Sair</button>
       </div>
-      <nav class="sidebar-nav">
-        <button class="nav-item active" data-page="desafio">🏁 Desafio</button>
-        <button class="nav-item" data-page="conta">👤 Minha conta</button>
-        <button class="nav-item" data-page="conteudo">🎬 Criação de Conteúdo</button>
-        <button class="nav-item" data-page="financas">💰 Finanças</button>
-        <button class="nav-item" data-page="campanhas">📣 Campanhas</button>
-      </nav>
-      <div class="sidebar-footer">
-        <span class="user-badge" id="userEmailLabel"></span>
-        <div class="sidebar-footer-actions">
-          <button class="icon-toggle-btn" id="btnTheme" title="Alternar tema">🌙</button>
-          <button class="logout-btn" id="btnLogout">Sair</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <div class="topbar">
+      <button class="hamburger-btn" id="sidebarOpen">☰</button>
+      <div class="topbar-title" id="topbarTitle">Início</div>
+    </div>
+
+    <div class="page" id="page-inicio">
+      <div class="app-header">
+        <h1 class="app-title">Semana de <span>Treino</span></h1>
+        <div class="view-toggle">
+          <button id="btnWeek" class="active">Semana</button>
+          <button id="btnDay">Dia</button>
+          <button id="btnMonth">Mês</button>
         </div>
       </div>
-    </aside>
 
-    <div class="main-area">
-      <div class="mobile-topbar">
-        <button class="hamburger-btn" id="sidebarOpen">☰</button>
-        <div class="mobile-topbar-title" id="mobileTopbarTitle">Desafio</div>
+      <div class="legend" id="legend"></div>
+      <div class="legend-hint">clique para filtrar (pode selecionar mais de uma categoria)</div>
+
+      <div id="weekView">
+        <div class="view-nav">
+          <div class="nav-left">
+            <button class="nav-btn" id="weekPrev">‹</button>
+            <button class="nav-today-btn" id="weekToday">Hoje</button>
+            <button class="nav-btn" id="weekNext">›</button>
+          </div>
+          <div class="range-label" id="weekRangeLabel"></div>
+        </div>
+        <div class="week-track"><div class="week-grid" id="weekGrid"></div></div>
       </div>
 
-      <div class="page" id="page-desafio">
-        <div class="app-header">
-          <h1 class="app-title">Semana de <span>Treino</span></h1>
-          <div class="view-toggle">
-            <button id="btnWeek" class="active">Semana</button>
-            <button id="btnDay">Dia</button>
-            <button id="btnMonth">Mês</button>
+      <div id="dayView">
+        <div class="view-nav">
+          <div class="nav-left">
+            <button class="nav-btn" id="dayPrev">‹</button>
+            <button class="nav-today-btn" id="dayToday">Hoje</button>
+            <button class="nav-btn" id="dayNext">›</button>
+          </div>
+          <div class="range-label" id="dayRangeLabel"></div>
+        </div>
+        <div class="day-schedule" id="daySchedule"></div>
+      </div>
+
+      <div id="monthView">
+        <div class="view-nav">
+          <div class="nav-left">
+            <button class="nav-btn" id="monthPrev">‹</button>
+            <button class="nav-today-btn" id="monthToday">Hoje</button>
+            <button class="nav-btn" id="monthNext">›</button>
+          </div>
+          <div class="range-label" id="monthRangeLabel"></div>
+        </div>
+        <div class="month-weekday-heads" id="monthWeekdayHeads"></div>
+        <div class="month-grid" id="monthGrid"></div>
+      </div>
+
+      <div class="backlog">
+        <div class="backlog-head">
+          <div class="backlog-title">Backlog</div>
+          <div class="backlog-actions">
+            <button class="backlog-add" id="btnManageCats">Categorias</button>
+            <button class="backlog-add" id="btnAddBacklog">+ Nova tarefa</button>
           </div>
         </div>
-
-        <div class="legend" id="legend"></div>
-        <div class="legend-hint">clique para filtrar (pode selecionar mais de uma categoria)</div>
-
-        <div id="weekView">
-          <div class="view-nav">
-            <div class="nav-left">
-              <button class="nav-btn" id="weekPrev">‹</button>
-              <button class="nav-today-btn" id="weekToday">Hoje</button>
-              <button class="nav-btn" id="weekNext">›</button>
-            </div>
-            <div class="range-label" id="weekRangeLabel"></div>
-          </div>
-          <div class="week-track"><div class="week-grid" id="weekGrid"></div></div>
-        </div>
-
-        <div id="dayView">
-          <div class="view-nav">
-            <div class="nav-left">
-              <button class="nav-btn" id="dayPrev">‹</button>
-              <button class="nav-today-btn" id="dayToday">Hoje</button>
-              <button class="nav-btn" id="dayNext">›</button>
-            </div>
-            <div class="range-label" id="dayRangeLabel"></div>
-          </div>
-          <div class="day-schedule" id="daySchedule"></div>
-        </div>
-
-        <div id="monthView">
-          <div class="view-nav">
-            <div class="nav-left">
-              <button class="nav-btn" id="monthPrev">‹</button>
-              <button class="nav-today-btn" id="monthToday">Hoje</button>
-              <button class="nav-btn" id="monthNext">›</button>
-            </div>
-            <div class="range-label" id="monthRangeLabel"></div>
-          </div>
-          <div class="month-weekday-heads" id="monthWeekdayHeads"></div>
-          <div class="month-grid" id="monthGrid"></div>
-        </div>
-
-        <div class="backlog">
-          <div class="backlog-head">
-            <div class="backlog-title">Backlog</div>
-            <div class="backlog-actions">
-              <button class="backlog-add" id="btnManageCats">Categorias</button>
-              <button class="backlog-add" id="btnAddBacklog">+ Nova tarefa</button>
-            </div>
-          </div>
-          <div class="backlog-columns" id="backlogColumns"></div>
-        </div>
+        <div class="backlog-columns" id="backlogColumns"></div>
       </div>
+    </div>
 
-      <div class="page" id="page-conta" style="display:none;">
-        <h2 class="page-title">Minha conta</h2>
-      </div>
-      <div class="page" id="page-conteudo" style="display:none;">
-        <h2 class="page-title">Criação de Conteúdo</h2>
-      </div>
-      <div class="page" id="page-financas" style="display:none;">
-        <h2 class="page-title">Finanças</h2>
-      </div>
-      <div class="page" id="page-campanhas" style="display:none;">
-        <h2 class="page-title">Campanhas</h2>
-      </div>
+    <div class="page" id="page-desafio" style="display:none;">
+      <h2 class="page-title">Desafio</h2>
+    </div>
+    <div class="page" id="page-conta" style="display:none;">
+      <h2 class="page-title">Minha conta</h2>
+    </div>
+    <div class="page" id="page-conteudo" style="display:none;">
+      <h2 class="page-title">Criação de Conteúdo</h2>
+    </div>
+    <div class="page" id="page-financas" style="display:none;">
+      <h2 class="page-title">Finanças</h2>
+    </div>
+    <div class="page" id="page-campanhas" style="display:none;">
+      <h2 class="page-title">Campanhas</h2>
     </div>
   </div>
 </div>
@@ -429,7 +430,7 @@ const DEFAULT_CATS = [
 const WEEKDAY_SHORT = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const WEEKDAY_FULL = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const PAGE_TITLES = { desafio:'Desafio', conta:'Minha conta', conteudo:'Criação de Conteúdo', financas:'Finanças', campanhas:'Campanhas' };
+const PAGE_TITLES = { inicio:'Início', desafio:'Desafio', conta:'Minha conta', conteudo:'Criação de Conteúdo', financas:'Finanças', campanhas:'Campanhas' };
 
 let tasks = [];
 let categories = [];
@@ -929,7 +930,7 @@ async function handleCatSave(){
   }
 }
 
-// ---- view toggle (dentro da página Desafio) ----
+// ---- view toggle (dentro da página Início) ----
 function setView(view){
   document.getElementById('weekView').style.display = view==='week' ? 'block' : 'none';
   document.getElementById('dayView').style.display = view==='day' ? 'block' : 'none';
@@ -978,14 +979,14 @@ setInterval(()=>{
 }, 60000);
 
 // ============================================================
-// SIDEBAR / NAVEGAÇÃO ENTRE PÁGINAS
+// SIDEBAR (menu gaveta) / NAVEGAÇÃO ENTRE PÁGINAS
 // ============================================================
 function setPage(pageKey){
   document.querySelectorAll('.page').forEach(p=> p.style.display = 'none');
   const target = document.getElementById('page-'+pageKey);
   if(target) target.style.display = 'block';
   document.querySelectorAll('.nav-item').forEach(b=> b.classList.toggle('active', b.dataset.page===pageKey));
-  document.getElementById('mobileTopbarTitle').textContent = PAGE_TITLES[pageKey] || '';
+  document.getElementById('topbarTitle').textContent = PAGE_TITLES[pageKey] || '';
   closeSidebar();
 }
 document.querySelectorAll('.nav-item').forEach(btn=>{

@@ -207,6 +207,23 @@
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+  /* ---- CRIAÇÃO DE CONTEÚDO (banco de ideias) ---- */
+  .ideas-grid{display:flex;flex-wrap:wrap;gap:14px;}
+  .idea-card{width:200px;background:var(--surface);border:1px solid var(--lane);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .1s,border-color .1s;}
+  .idea-card:hover{transform:translateY(-2px);border-color:var(--accent);}
+  .idea-cover{width:100%;height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:26px;overflow:hidden;}
+  .idea-cover img{width:100%;height:100%;object-fit:cover;}
+  .idea-body{padding:10px;}
+  .idea-title{font-size:13px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+  .idea-meta{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;}
+  .idea-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;text-transform:uppercase;letter-spacing:.03em;}
+  .idea-date{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);}
+  .ideas-empty{color:var(--muted);font-size:13px;padding:20px;border:1px dashed var(--lane);border-radius:8px;text-align:center;width:100%;}
+
+  .cover-preview{width:100%;height:150px;border-radius:8px;background:var(--surface2);border:1px dashed var(--lane);display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--muted);font-size:12.5px;margin-bottom:10px;}
+  .cover-preview img{width:100%;height:100%;object-fit:cover;}
+  .cover-file-input{font-size:12px;color:var(--muted);}
+
   @media (max-width:700px){
     .days-grid{gap:14px 8px;}
     .day-circle{width:54px;height:54px;}
@@ -424,6 +441,26 @@
     </div>
     <div class="page" id="page-conteudo" style="display:none;">
       <h2 class="page-title">Criação de Conteúdo</h2>
+
+      <div class="view-nav">
+        <div class="nav-left">
+          <button class="nav-btn" id="contentWeekPrev">‹</button>
+          <button class="nav-today-btn" id="contentWeekToday">Hoje</button>
+          <button class="nav-btn" id="contentWeekNext">›</button>
+        </div>
+        <div class="range-label" id="contentWeekRangeLabel"></div>
+      </div>
+      <div class="week-track"><div class="week-grid" id="contentWeekGrid"></div></div>
+
+      <div class="backlog">
+        <div class="backlog-head">
+          <div class="backlog-title">Banco de ideias</div>
+          <div class="backlog-actions">
+            <button class="backlog-add" id="btnAddIdea">+ Nova ideia</button>
+          </div>
+        </div>
+        <div class="ideas-grid" id="ideasGrid"></div>
+      </div>
     </div>
     <div class="page" id="page-financas" style="display:none;">
       <h2 class="page-title">Finanças</h2>
@@ -458,6 +495,28 @@
         <button class="btn btn-delete" id="btnDelete" style="display:none;">Excluir</button>
       </div>
       <button class="btn btn-save" id="btnSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ideaModalOverlay">
+  <div class="modal">
+    <h3 id="ideaModalTitle">Nova ideia</h3>
+    <div class="field"><label>Nome</label><input type="text" id="iTitle" placeholder="Ex: Reels sobre rotina matinal"></div>
+    <div class="field"><label>Status</label><div class="cat-select" id="iStatusSelect"></div></div>
+    <div class="field"><label>Data (opcional)</label><input type="date" id="iDate"></div>
+    <div class="field">
+      <label>Capa</label>
+      <div class="cover-preview" id="iCoverPreview">Nenhuma imagem selecionada</div>
+      <input type="file" id="iCoverFile" accept="image/*" class="cover-file-input">
+    </div>
+    <div class="field"><label>Roteiro</label><textarea id="iRoteiro" placeholder="Escreva o roteiro, ganchos, falas..." style="min-height:140px;"></textarea></div>
+    <div class="modal-actions">
+      <div class="modal-actions-row">
+        <button class="btn btn-cancel" id="ideaBtnCancel">Cancelar</button>
+        <button class="btn btn-delete" id="ideaBtnDelete" style="display:none;">Excluir</button>
+      </div>
+      <button class="btn btn-save" id="ideaBtnSave">Salvar</button>
     </div>
   </div>
 </div>
@@ -514,6 +573,19 @@ let catEditingKey = null;
 let lastKnownToday = todayISO();
 let currentUser = null;
 let activeFilterCats = new Set(); // vazio = mostra todas as categorias
+let contentWeekStart = getMonday(new Date());
+let ideas = [];
+let ideaEditingId = null;
+let ideaCoverValue = null;
+
+const STATUS_DEFS = [
+  { key:'ideia',    label:'Ideia',    color:'#A78BFA' },
+  { key:'roteiro',  label:'Roteiro',  color:'#6C7BC4' },
+  { key:'gravacao', label:'Gravação', color:'#FF4B3E' },
+  { key:'edicao',   label:'Edição',   color:'#F5B942' },
+  { key:'postado',  label:'Postado',  color:'#2DD4BF' }
+];
+function statusDef(key){ return STATUS_DEFS.find(s=>s.key===key) || STATUS_DEFS[0]; }
 
 function pad(n){ return String(n).padStart(2,'0'); }
 function toISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
@@ -577,6 +649,12 @@ async function initUserContent(){
     if(insErr) console.error(insErr);
   }
   categories = (catRows||[]).filter(r=>r && r.id).map(r=>({id:r.id,key:r.key,label:r.label,emoji:r.emoji,color:r.color}));
+
+  if(!categories.some(c=>c.key==='conteudo')){
+    const { data: newCat, error: ccErr } = await supabase.from('categories').insert({key:'conteudo', label:'Conteúdo', emoji:'🎬', color:'#FF8A3D'}).select().single();
+    if(!ccErr && newCat) categories.push({id:newCat.id, key:newCat.key, label:newCat.label, emoji:newCat.emoji, color:newCat.color});
+    else if(ccErr) console.error(ccErr);
+  }
 
   let { data: taskRows, error: taskErr } = await supabase.from('tasks').select('*').order('created_at');
   if(taskErr) console.error(taskErr);
@@ -820,10 +898,189 @@ function renderAll(){
   renderDay();
   renderMonth();
   renderBacklog();
+  renderContentWeek();
 }
 
+function renderContentWeek(){
+  const dates = [];
+  for(let i=0;i<7;i++) dates.push(addDays(contentWeekStart, i));
+  document.getElementById('contentWeekRangeLabel').textContent = fmtShort(dates[0]) + ' – ' + fmtShort(dates[6]) + ' de ' + MONTH_NAMES[dates[6].getMonth()];
+
+  const today = todayISO();
+  const grid = document.getElementById('contentWeekGrid');
+  grid.innerHTML = dates.map((d,i) => {
+    const iso = toISO(d);
+    const dayTasks = tasks.filter(t=>t.cat==='conteudo' && t.date===iso);
+    const isToday = iso===today;
+    return `<div class="day-col ${isToday?'today':''}" data-date="${iso}">
+      <div class="day-col-head">${WEEKDAY_SHORT[i]}</div>
+      <div class="day-col-date">${fmtShort(d)}</div>
+      <div class="day-col-tasks">${dayTasks.map(t=>chipHTML(t,false)).join('')}</div>
+      <button class="add-task-btn" data-date="${iso}">+ adicionar</button>
+    </div>`;
+  }).join('');
+
+  document.querySelectorAll('#contentWeekGrid .day-col').forEach(col=>{
+    attachChipEvents(col);
+    attachDropZone(col, col.dataset.date, 'conteudo');
+  });
+  document.querySelectorAll('#contentWeekGrid .add-task-btn').forEach(btn=>{
+    btn.onclick = ()=> openModal(null, btn.dataset.date, 'conteudo');
+  });
+}
+document.getElementById('contentWeekPrev').onclick = ()=>{ contentWeekStart = addDays(contentWeekStart, -7); renderContentWeek(); };
+document.getElementById('contentWeekNext').onclick = ()=>{ contentWeekStart = addDays(contentWeekStart, 7); renderContentWeek(); };
+document.getElementById('contentWeekToday').onclick = ()=>{ contentWeekStart = getMonday(new Date()); renderContentWeek(); };
+
+// ============================================================
+// BANCO DE IDEIAS (Criação de Conteúdo)
+// ============================================================
+function fromDbIdea(row){
+  return { id:row.id, title:row.title, status:row.status, date:row.date, cover:row.cover_image, roteiro:row.roteiro };
+}
+function toDbIdea(patch){
+  const m = {};
+  if('title' in patch) m.title = patch.title;
+  if('status' in patch) m.status = patch.status;
+  if('date' in patch) m.date = patch.date;
+  if('cover' in patch) m.cover_image = patch.cover;
+  if('roteiro' in patch) m.roteiro = patch.roteiro;
+  return m;
+}
+
+async function loadIdeas(){
+  const { data, error } = await supabase.from('content_ideas').select('*').order('created_at');
+  if(error) console.error(error);
+  ideas = (data||[]).filter(r=>r && r.id).map(fromDbIdea);
+  renderIdeasList();
+}
+
+function renderIdeasList(){
+  const el = document.getElementById('ideasGrid');
+  if(ideas.length===0){
+    el.innerHTML = `<div class="ideas-empty">Nenhuma ideia ainda. Clica em "+ Nova ideia" pra começar o banco.</div>`;
+    return;
+  }
+  el.innerHTML = ideas.map(idea=>{
+    const s = statusDef(idea.status);
+    return `<div class="idea-card" data-id="${idea.id}">
+      <div class="idea-cover">${idea.cover ? `<img src="${idea.cover}" alt="">` : '🎬'}</div>
+      <div class="idea-body">
+        <div class="idea-title">${escapeHtml(idea.title)}</div>
+        <div class="idea-meta">
+          <span class="idea-status" style="background:${s.color}33;color:${s.color};">${s.label}</span>
+          ${idea.date ? `<span class="idea-date">${fmtShort(fromISO(idea.date))}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.idea-card').forEach(card=>{
+    card.onclick = ()=> openIdeaModal(card.dataset.id);
+  });
+}
+
+function renderStatusSelect(selected){
+  const el = document.getElementById('iStatusSelect');
+  el.innerHTML = STATUS_DEFS.map(s=>
+    `<div class="cat-btn ${s.key===selected?'selected':''}" data-status="${s.key}" style="color:${s.key===selected?s.color:''}">
+      <span class="cat-dot" style="background:${s.color}"></span>${s.label}
+    </div>`
+  ).join('');
+  el.querySelectorAll('.cat-btn').forEach(b=>{
+    b.onclick = ()=> renderStatusSelect(b.dataset.status);
+  });
+}
+
+function renderCoverPreview(){
+  const el = document.getElementById('iCoverPreview');
+  el.innerHTML = ideaCoverValue ? `<img src="${ideaCoverValue}" alt="">` : 'Nenhuma imagem selecionada';
+}
+
+document.getElementById('iCoverFile').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ ideaCoverValue = reader.result; renderCoverPreview(); };
+  reader.readAsDataURL(file);
+});
+
+function openIdeaModal(id){
+  ideaEditingId = id;
+  const iTitle = document.getElementById('iTitle');
+  const iDate = document.getElementById('iDate');
+  const iRoteiro = document.getElementById('iRoteiro');
+  const ideaBtnDelete = document.getElementById('ideaBtnDelete');
+
+  let selectedStatus = 'ideia';
+  if(id){
+    const idea = ideas.find(x=>x.id===id);
+    document.getElementById('ideaModalTitle').textContent = 'Editar ideia';
+    iTitle.value = idea.title;
+    iDate.value = idea.date || '';
+    iRoteiro.value = idea.roteiro || '';
+    ideaCoverValue = idea.cover || null;
+    selectedStatus = idea.status;
+    ideaBtnDelete.style.display = 'block';
+  } else {
+    document.getElementById('ideaModalTitle').textContent = 'Nova ideia';
+    iTitle.value = ''; iDate.value = ''; iRoteiro.value = '';
+    ideaCoverValue = null;
+    ideaBtnDelete.style.display = 'none';
+  }
+  document.getElementById('iCoverFile').value = '';
+  renderCoverPreview();
+  renderStatusSelect(selectedStatus);
+  document.getElementById('ideaModalOverlay').classList.add('open');
+  iTitle.focus();
+}
+
+function closeIdeaModal(){
+  document.getElementById('ideaModalOverlay').classList.remove('open');
+  ideaEditingId = null;
+  ideaCoverValue = null;
+}
+
+async function handleIdeaSave(){
+  const title = document.getElementById('iTitle').value.trim();
+  if(!title){ document.getElementById('iTitle').focus(); return; }
+  const statusBtn = document.querySelector('#iStatusSelect .cat-btn.selected');
+  const status = statusBtn ? statusBtn.dataset.status : 'ideia';
+  const date = document.getElementById('iDate').value || null;
+  const roteiro = document.getElementById('iRoteiro').value;
+  const patch = { title, status, date, roteiro, cover: ideaCoverValue };
+
+  if(ideaEditingId){
+    const id = ideaEditingId;
+    const idea = ideas.find(x=>x.id===id);
+    Object.assign(idea, patch);
+    closeIdeaModal(); renderIdeasList();
+    const { error } = await supabase.from('content_ideas').update(toDbIdea(patch)).eq('id', id);
+    if(error) alert('Erro ao salvar ideia: '+error.message);
+  } else {
+    const { data, error } = await supabase.from('content_ideas').insert(toDbIdea(patch)).select().single();
+    if(error){ alert('Erro ao criar ideia: '+error.message); return; }
+    ideas.push(fromDbIdea(data));
+    closeIdeaModal(); renderIdeasList();
+  }
+}
+
+async function handleIdeaDelete(){
+  if(!ideaEditingId) return;
+  const id = ideaEditingId;
+  ideas = ideas.filter(x=>x.id!==id);
+  closeIdeaModal(); renderIdeasList();
+  const { error } = await supabase.from('content_ideas').delete().eq('id', id);
+  if(error) alert('Erro ao excluir: '+error.message);
+}
+
+document.getElementById('btnAddIdea').onclick = ()=> openIdeaModal(null);
+document.getElementById('ideaBtnCancel').onclick = closeIdeaModal;
+document.getElementById('ideaBtnSave').onclick = handleIdeaSave;
+document.getElementById('ideaBtnDelete').onclick = handleIdeaDelete;
+document.getElementById('ideaModalOverlay').addEventListener('click', e=>{ if(e.target.id==='ideaModalOverlay') closeIdeaModal(); });
+
 // ---- task modal ----
-function openModal(taskId, prefillDate){
+function openModal(taskId, prefillDate, forceCat){
   editingId = taskId;
   const modalTitle = document.getElementById('modalTitle');
   const fTitle = document.getElementById('fTitle');
@@ -835,7 +1092,7 @@ function openModal(taskId, prefillDate){
   const btnDelete = document.getElementById('btnDelete');
   const btnDuplicate = document.getElementById('btnDuplicate');
 
-  let selectedCat = categories[0].key;
+  let selectedCat = forceCat || categories[0].key;
   if(taskId){
     const t = tasks.find(x=>x.id===taskId);
     modalTitle.textContent = 'Editar tarefa';
@@ -1215,6 +1472,7 @@ setInterval(()=>{
     currentWeekStart = getMonday(new Date());
     currentDate = t;
     currentMonthCursor = new Date();
+    contentWeekStart = getMonday(new Date());
     renderAll();
   }
 }, 60000);
@@ -1321,6 +1579,7 @@ async function showApp(user){
   await initUserContent();
   renderAll();
   await loadChallenge();
+  await loadIdeas();
 }
 function showAuth(){
   document.getElementById('authScreen').style.display = 'flex';

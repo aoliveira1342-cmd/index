@@ -208,7 +208,8 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
   /* ---- CRIAÇÃO DE CONTEÚDO (banco de ideias) ---- */
-  .ideas-grid{display:flex;flex-wrap:wrap;gap:14px;}
+  .ideas-grid{display:flex;flex-wrap:wrap;gap:14px;min-height:60px;border-radius:8px;transition:background .15s;}
+  .ideas-grid.drag-over{background:rgba(255,75,62,0.06);}
   .idea-card{width:200px;background:var(--surface);border:1px solid var(--lane);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .1s,border-color .1s;}
   .idea-card:hover{transform:translateY(-2px);border-color:var(--accent);}
   .idea-cover{width:100%;height:120px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:26px;overflow:hidden;}
@@ -860,18 +861,29 @@ function attachCheckboxEvents(container){
 }
 
 function attachChipEvents(container){
-  container.querySelectorAll('.task-chip, .month-chip').forEach(chip=>{
+  container.querySelectorAll('.task-chip:not(.is-idea), .month-chip').forEach(chip=>{
     chip.addEventListener('click', e=>{
       if(e.target.classList.contains('chip-check')) return;
       openModal(chip.dataset.id);
     });
     chip.addEventListener('dragstart', e=>{
-      e.dataTransfer.setData('text/plain', chip.dataset.id);
+      e.dataTransfer.setData('text/plain', 'task:'+chip.dataset.id);
       chip.classList.add('drag-ghost');
     });
     chip.addEventListener('dragend', ()=> chip.classList.remove('drag-ghost'));
   });
   attachCheckboxEvents(container);
+}
+
+function attachIdeaChipEvents(container){
+  container.querySelectorAll('.is-idea').forEach(chip=>{
+    chip.addEventListener('click', ()=> openIdeaModal(chip.dataset.ideaId));
+    chip.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', 'idea:'+chip.dataset.ideaId);
+      chip.classList.add('drag-ghost');
+    });
+    chip.addEventListener('dragend', ()=> chip.classList.remove('drag-ghost'));
+  });
 }
 
 function attachDropZone(el, dateVal, forceCat){
@@ -880,7 +892,20 @@ function attachDropZone(el, dateVal, forceCat){
   el.addEventListener('drop', async e=>{
     e.preventDefault(); e.stopPropagation();
     el.classList.remove('drag-over');
-    const id = e.dataTransfer.getData('text/plain');
+    const raw = e.dataTransfer.getData('text/plain');
+
+    if(raw.startsWith('idea:')){
+      const ideaId = raw.slice(5);
+      const idea = ideas.find(x=>x.id===ideaId);
+      if(!idea) return;
+      idea.date = dateVal;
+      renderIdeasList(); renderContentWeek();
+      const { error } = await supabase.from('content_ideas').update({date:dateVal}).eq('id', ideaId);
+      if(error) alert('Erro ao mover ideia: '+error.message);
+      return;
+    }
+
+    const id = raw.startsWith('task:') ? raw.slice(5) : raw;
     const t = tasks.find(x=>x.id===id);
     if(!t) return;
     t.date = dateVal;
@@ -901,6 +926,14 @@ function renderAll(){
   renderContentWeek();
 }
 
+function ideaChipHTML(idea){
+  const s = statusDef(idea.status);
+  return `<div class="task-chip is-idea" draggable="true" data-idea-id="${idea.id}" style="border-left-color:${s.color}">
+    <div class="task-chip-top"><span class="task-emoji">🎬</span><span class="task-title">${escapeHtml(idea.title)}</span></div>
+    <div class="task-time" style="margin-left:0;">${s.label}</div>
+  </div>`;
+}
+
 function renderContentWeek(){
   const dates = [];
   for(let i=0;i<7;i++) dates.push(addDays(contentWeekStart, i));
@@ -911,17 +944,19 @@ function renderContentWeek(){
   grid.innerHTML = dates.map((d,i) => {
     const iso = toISO(d);
     const dayTasks = tasks.filter(t=>t.cat==='conteudo' && t.date===iso);
+    const dayIdeas = ideas.filter(idea=>idea.date===iso);
     const isToday = iso===today;
     return `<div class="day-col ${isToday?'today':''}" data-date="${iso}">
       <div class="day-col-head">${WEEKDAY_SHORT[i]}</div>
       <div class="day-col-date">${fmtShort(d)}</div>
-      <div class="day-col-tasks">${dayTasks.map(t=>chipHTML(t,false)).join('')}</div>
+      <div class="day-col-tasks">${dayTasks.map(t=>chipHTML(t,false)).join('')}${dayIdeas.map(ideaChipHTML).join('')}</div>
       <button class="add-task-btn" data-date="${iso}">+ adicionar</button>
     </div>`;
   }).join('');
 
   document.querySelectorAll('#contentWeekGrid .day-col').forEach(col=>{
     attachChipEvents(col);
+    attachIdeaChipEvents(col);
     attachDropZone(col, col.dataset.date, 'conteudo');
   });
   document.querySelectorAll('#contentWeekGrid .add-task-btn').forEach(btn=>{
@@ -963,7 +998,7 @@ function renderIdeasList(){
   }
   el.innerHTML = ideas.map(idea=>{
     const s = statusDef(idea.status);
-    return `<div class="idea-card" data-id="${idea.id}">
+    return `<div class="idea-card" draggable="true" data-idea-id="${idea.id}">
       <div class="idea-cover">${idea.cover ? `<img src="${idea.cover}" alt="">` : '🎬'}</div>
       <div class="idea-body">
         <div class="idea-title">${escapeHtml(idea.title)}</div>
@@ -975,9 +1010,15 @@ function renderIdeasList(){
     </div>`;
   }).join('');
   el.querySelectorAll('.idea-card').forEach(card=>{
-    card.onclick = ()=> openIdeaModal(card.dataset.id);
+    card.addEventListener('click', ()=> openIdeaModal(card.dataset.ideaId));
+    card.addEventListener('dragstart', e=>{
+      e.dataTransfer.setData('text/plain', 'idea:'+card.dataset.ideaId);
+      card.classList.add('drag-ghost');
+    });
+    card.addEventListener('dragend', ()=> card.classList.remove('drag-ghost'));
   });
 }
+attachDropZone(document.getElementById('ideasGrid'), null, null);
 
 function renderStatusSelect(selected){
   const el = document.getElementById('iStatusSelect');
